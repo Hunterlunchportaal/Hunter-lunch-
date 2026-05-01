@@ -704,6 +704,27 @@ async function loadFromBin() {
 async function save() {
   if (!JSONBIN_BIN_ID) return;
   try {
+    // Fetch latest first to prevent overwriting others changes
+    const fetchRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+      headers: { "X-Master-Key": JSONBIN_MASTER_KEY }
+    });
+    const fetchJson = await fetchRes.json();
+    if (fetchJson.record) {
+      const remote = fetchJson.record;
+      // Merge absences
+      const mergedAbsences = JSON.parse(JSON.stringify(remote.absences || {}));
+      Object.keys(DATA.absences || {}).forEach(user => {
+        if (!mergedAbsences[user]) mergedAbsences[user] = {};
+        Object.keys(DATA.absences[user] || {}).forEach(wk => {
+          if (!mergedAbsences[user][wk]) mergedAbsences[user][wk] = {};
+          Object.assign(mergedAbsences[user][wk], DATA.absences[user][wk]);
+        });
+      });
+      // Merge closedDays
+      const mergedClosed = Object.assign({}, remote.closedDays || {}, DATA.closedDays || {});
+      DATA.absences = mergedAbsences;
+      DATA.closedDays = mergedClosed;
+    }
     await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
       method: "PUT",
       headers: {
