@@ -734,10 +734,28 @@ let UI = {
   selectedYear: new Date().getFullYear()
 };
 
-// ── JSONBIN CONFIG ────────────────────────────────────────
-const JSONBIN_MASTER_KEY = "$2a$10$x8JB/aZdrTaBHWBKlxBggOoVFATZRydTq32QI4pecRaWWLsSbu8IC";
-const JSONBIN_BIN_ID_KEY = "hunter_lp_bin_id";
-let JSONBIN_BIN_ID = localStorage.getItem(JSONBIN_BIN_ID_KEY) || null;
+// ── SUPABASE CONFIG ───────────────────────────────────────
+const SB_URL = "https://xyxkrguwvswdbkwrdewc.supabase.co";
+const SB_KEY = "sb_publishable_nLySbH2NWhHq-ErnzUve4Q_XBahlls6";
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SB_URL + "/rest/v1" + path, {
+    ...options,
+    headers: {
+      "apikey": SB_KEY,
+      "Authorization": "Bearer " + SB_KEY,
+      "Content-Type": "application/json",
+      "Prefer": options.prefer || "return=representation",
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error("Supabase error: " + err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
 
 // Show loading overlay
 function showLoading(msg) {
@@ -760,79 +778,105 @@ function hideLoading() {
   if (el) el.style.display = "none";
 }
 
-async function loadFromBin() {
-  if (!JSONBIN_BIN_ID) {
-    // First time: create a new bin
-    showLoading("Eerste keer opstarten...");
-    try {
-      const res = await fetch("https://api.jsonbin.io/v3/b", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Master-Key": JSONBIN_MASTER_KEY,
-          "X-Bin-Name": "hunter-lunch-portal"
-        },
-        body: JSON.stringify(DATA)
-      });
-      const json = await res.json();
-      JSONBIN_BIN_ID = json.metadata?.id;
-      if (JSONBIN_BIN_ID) {
-        localStorage.setItem(JSONBIN_BIN_ID_KEY, JSONBIN_BIN_ID);
-        alert("Nieuwe dataopslag aangemaakt! Bin ID: " + JSONBIN_BIN_ID + "\n\nDeel dit ID met je collega's zodat iedereen dezelfde data gebruikt. Sla het op!");
-      }
-    } catch(e) { console.error("Kon bin niet aanmaken", e); }
-    hideLoading();
-    return;
-  }
+async function loadData() {
   showLoading("Data ophalen...");
   try {
-    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-      headers: { "X-Master-Key": JSONBIN_MASTER_KEY }
-    });
-    const json = await res.json();
-    if (json.record) {
-      DATA = Object.assign(DATA, json.record);
+    // Load users
+    const users = await sbFetch("/users?select=name,password,allergy&order=name");
+    if (users.length > 0) {
+      DATA.users = users.map(u => ({name: u.name, password: u.password}));
+      DATA.allergies = {};
+      users.forEach(u => { if (u.allergy) DATA.allergies[u.name] = u.allergy; });
     }
-  } catch(e) { console.error("Laden mislukt", e); }
+    // Load settings
+    const settings = await sbFetch("/settings?select=key,value");
+    settings.forEach(s => {
+      if (s.key === "price_ontbijt") DATA.prices.Ontbijt = parseFloat(s.value);
+      if (s.key === "price_lunch") DATA.prices.Lunch = parseFloat(s.value);
+    });
+    // Load absences
+    const absences = await sbFetch("/absences?select=user_name,week_key,day,meal,absent");
+    DATA.absences = {};
+    absences.forEach(a => {
+      if (!DATA.absences[a.user_name]) DATA.absences[a.user_name] = {};
+      if (!DATA.absences[a.user_name][a.week_key]) DATA.absences[a.user_name][a.week_key] = {};
+      if (!DATA.absences[a.user_name][a.week_key][a.day]) DATA.absences[a.user_name][a.week_key][a.day] = {};
+      DATA.absences[a.user_name][a.week_key][a.day][a.meal] = a.absent;
+    });
+    // Load closed days
+    const closed = await sbFetch("/closed_days?select=day_key,meal,closed");
+    DATA.closedDays = {};
+    closed.forEach(c => {
+      if (!DATA.closedDays[c.day_key]) DATA.closedDays[c.day_key] = {};
+      DATA.closedDays[c.day_key][c.meal] = c.closed;
+    });
+  } catch(e) { console.error("Laden mislukt", e); alert("Kon data niet laden. Check je internetverbinding."); }
   hideLoading();
 }
 
-async function save() {
-  if (!JSONBIN_BIN_ID) return;
+async function saveAbsence(user, wk, day, meal, absent) {
   try {
-    // Fetch latest first to prevent overwriting others changes
-    const fetchRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-      headers: { "X-Master-Key": JSONBIN_MASTER_KEY }
+    await sbFetch("/absences", {
+      method: "POST",
+      prefer: "resolution=merge-duplicates,return=minimal",
+      headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ user_name: user, week_key: wk, day, meal, absent })
     });
-    const fetchJson = await fetchRes.json();
-    if (fetchJson.record) {
-      const remote = fetchJson.record;
-      // Merge absences
-      const mergedAbsences = JSON.parse(JSON.stringify(remote.absences || {}));
-      Object.keys(DATA.absences || {}).forEach(user => {
-        if (!mergedAbsences[user]) mergedAbsences[user] = {};
-        Object.keys(DATA.absences[user] || {}).forEach(wk => {
-          if (!mergedAbsences[user][wk]) mergedAbsences[user][wk] = {};
-          Object.assign(mergedAbsences[user][wk], DATA.absences[user][wk]);
-        });
-      });
-      // Merge closedDays
-      const mergedClosed = Object.assign({}, remote.closedDays || {}, DATA.closedDays || {});
-      // Merge allergies
-      const mergedAllergies = Object.assign({}, remote.allergies || {}, DATA.allergies || {});
-      DATA.absences = mergedAbsences;
-      DATA.closedDays = mergedClosed;
-      DATA.allergies = mergedAllergies;
-    }
-    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Master-Key": JSONBIN_MASTER_KEY
-      },
-      body: JSON.stringify(DATA)
+  } catch(e) { console.error("Opslaan afwezigheid mislukt", e); }
+}
+
+async function saveClosedDay(dayKey, meal, closed) {
+  try {
+    await sbFetch("/closed_days", {
+      method: "POST",
+      headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ day_key: dayKey, meal, closed })
     });
-  } catch(e) { console.error("Opslaan mislukt", e); }
+  } catch(e) { console.error("Opslaan gesloten dag mislukt", e); }
+}
+
+async function saveAllergy(userName, allergy) {
+  try {
+    await sbFetch("/users?name=eq." + encodeURIComponent(userName), {
+      method: "PATCH",
+      headers: { "Prefer": "return=minimal" },
+      body: JSON.stringify({ allergy })
+    });
+  } catch(e) { console.error("Opslaan allergie mislukt", e); }
+}
+
+async function savePrice(key, value) {
+  try {
+    await sbFetch("/settings?key=eq." + key, {
+      method: "PATCH",
+      headers: { "Prefer": "return=minimal" },
+      body: JSON.stringify({ value: String(value) })
+    });
+  } catch(e) { console.error("Opslaan prijs mislukt", e); }
+}
+
+async function saveUserToDB(name, password) {
+  try {
+    await sbFetch("/users", {
+      method: "POST",
+      headers: { "Prefer": "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ name, password, allergy: "" })
+    });
+  } catch(e) { console.error("Opslaan gebruiker mislukt", e); }
+}
+
+async function deleteUserFromDB(name) {
+  try {
+    await sbFetch("/users?name=eq." + encodeURIComponent(name), {
+      method: "DELETE",
+      headers: { "Prefer": "return=minimal" }
+    });
+  } catch(e) { console.error("Verwijderen gebruiker mislukt", e); }
+}
+
+// Legacy save() for commitSave compatibility
+async function save() {
+  // Individual saves are done inline — this is a no-op now
 }
 
 // ── DATES ─────────────────────────────────────────────────
@@ -860,27 +904,29 @@ function getWeekLabel(offset){
 function isAbsent(user,wk,day,meal){return!!(DATA.absences[user]?.[wk]?.[day]?.[meal]);}
 function isClosed(wk,i,meal){return!!(DATA.closedDays[getDayKey(wk,i)]?.[meal]);}
 
-function toggleAbsence(user,wk,day,meal){
+async function toggleAbsence(user,wk,day,meal){
   if(!DATA.absences[user])DATA.absences[user]={};
   if(!DATA.absences[user][wk])DATA.absences[user][wk]={};
   if(!DATA.absences[user][wk][day])DATA.absences[user][wk][day]={};
-  DATA.absences[user][wk][day][meal]=!DATA.absences[user][wk][day][meal];
-  markPending();
+  const newVal = !DATA.absences[user][wk][day][meal];
+  DATA.absences[user][wk][day][meal] = newVal;
   render();
+  await saveAbsence(user, wk, day, meal, newVal);
 }
-function toggleClosed(wk,i,meal){
+async function toggleClosed(wk,i,meal){
   const dk=getDayKey(wk,i);
   if(!DATA.closedDays[dk])DATA.closedDays[dk]={};
-  DATA.closedDays[dk][meal]=!DATA.closedDays[dk][meal];
-  markPending();
+  const newVal = !DATA.closedDays[dk][meal];
+  DATA.closedDays[dk][meal] = newVal;
   render();
+  await saveClosedDay(dk, meal, newVal);
 }
-function closeWholeDay(wk,i){
+async function closeWholeDay(wk,i){
   const dk=getDayKey(wk,i);
   if(!DATA.closedDays[dk])DATA.closedDays[dk]={};
   MEALS.forEach(m=>DATA.closedDays[dk][m]=true);
-  markPending();
   render();
+  await Promise.all(MEALS.map(m => saveClosedDay(dk, m, true)));
 }
 
 function countWeek(user,wk){
@@ -1100,7 +1146,7 @@ function renderUser(){
     <input type="text" id="allergy-input" placeholder="bijv. lactose-intolerant, vegetarisch, notenallergie..."
       value="${currentAllergy}"
       style="width:100%;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);font-family:var(--font);font-size:0.88rem;background:rgba(255,255,255,0.8);"
-      oninput="DATA.allergies=DATA.allergies||{};DATA.allergies['${user}']=this.value;markPending()"/>`;
+      onchange="DATA.allergies=DATA.allergies||{};DATA.allergies['${user}']=this.value;saveAllergy('${user}',this.value)"/>`;
 }
 
 function switchTab(btn,tab){
@@ -1284,11 +1330,11 @@ function renderTabInstellingen(){
       <div class="section-label">Prijzen per maaltijd</div>
       <div class="setting-row">
         <span class="setting-label">Prijs ontbijt</span>
-        <input type="number" step="0.10" min="0" value="${DATA.prices.Ontbijt.toFixed(2)}" onchange="DATA.prices.Ontbijt=parseFloat(this.value)||0;save()"/>
+        <input type="number" step="0.10" min="0" value="${DATA.prices.Ontbijt.toFixed(2)}" onchange="DATA.prices.Ontbijt=parseFloat(this.value)||0;savePrice('price_ontbijt',this.value)"/>
       </div>
       <div class="setting-row">
         <span class="setting-label">Prijs lunch</span>
-        <input type="number" step="0.10" min="0" value="${DATA.prices.Lunch.toFixed(2)}" onchange="DATA.prices.Lunch=parseFloat(this.value)||0;save()"/>
+        <input type="number" step="0.10" min="0" value="${DATA.prices.Lunch.toFixed(2)}" onchange="DATA.prices.Lunch=parseFloat(this.value)||0;savePrice('price_lunch',this.value)"/>
       </div>
     </div>
     <div class="card">
@@ -1302,19 +1348,23 @@ function renderTabInstellingen(){
   document.getElementById("tab-instellingen").innerHTML=html;
 }
 
-function addUser(){
+async function addUser(){
   const name=document.getElementById("newName").value.trim();
   const pw=document.getElementById("newPw").value.trim();
   if(!name||!pw)return;
+  showLoading("Medewerker toevoegen...");
+  await saveUserToDB(name, pw);
   DATA.users.push({name,password:pw});
-  markPending();
+  hideLoading();
   populateSelect();
   renderTabMensen();
 }
-function removeUser(i){
+async function removeUser(i){
   if(!confirm("Medewerker '"+DATA.users[i].name+"' verwijderen?"))return;
+  showLoading("Verwijderen...");
+  await deleteUserFromDB(DATA.users[i].name);
   DATA.users.splice(i,1);
-  markPending();
+  hideLoading();
   populateSelect();
   renderTabMensen();
 }
@@ -1331,18 +1381,9 @@ function populateSelect(){
 }
 
 // Ask for bin ID if not set
-function promptBinId() {
-  const existing = localStorage.getItem(JSONBIN_BIN_ID_KEY);
-  if (existing) { JSONBIN_BIN_ID = existing; return; }
-  const id = prompt("Voer het JSONBin ID in (vraag dit aan de beheerder).\n\nBen je de eerste gebruiker? Laat leeg en druk OK — dan wordt automatisch een nieuw aangemaakt.");
-  if (id && id.trim()) {
-    JSONBIN_BIN_ID = id.trim();
-    localStorage.setItem(JSONBIN_BIN_ID_KEY, JSONBIN_BIN_ID);
-  }
-}
-
 async function refreshData() {
-  await loadFromBin();
+  await loadData();
+  populateSelect();
   render();
 }
 
@@ -1356,15 +1397,13 @@ function markPending() {
 }
 
 async function commitSave() {
-  const btn = document.getElementById("save-btn");
-  const txt = document.getElementById("save-bar-text");
-  if (btn) { btn.disabled = true; btn.textContent = "Opslaan..."; }
-  await save();
+  // With Supabase, saves happen immediately per action
+  // This button is kept as a visual confirmation only
   pendingSave = false;
-  if (btn) { btn.disabled = false; btn.textContent = "Opslaan ↑"; }
+  const bar = document.getElementById("save-bar");
+  const txt = document.getElementById("save-bar-text");
   if (txt) txt.textContent = "Opgeslagen ✓";
   setTimeout(() => {
-    const bar = document.getElementById("save-bar");
     if (bar) bar.classList.remove("visible");
     if (txt) txt.textContent = "Je hebt wijzigingen — vergeet niet op te slaan";
   }, 2000);
@@ -1433,8 +1472,7 @@ setGreeting();
 
 // Init
 (async function init() {
-  promptBinId();
-  await loadFromBin();
+  await loadData();
   populateSelect();
 })();
 </script>
