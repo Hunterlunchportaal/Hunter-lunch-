@@ -3,991 +3,1439 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hunter — Backoffice</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
+<title>Hunter — Lunch & Ontbijt Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --sky: #c8dff5; --mint: #c6ead8; --cream: #faf9f7; --stone: #f0ede8;
-  --text: #1a2030; --muted: #7a8399; --accent: #4a7fa5; --green: #3a8c65;
-  --warn: #c0785a; --border: rgba(26,32,48,0.08); --card: rgba(255,255,255,0.82);
-  --font: 'DM Sans', sans-serif; --serif: 'DM Serif Display', serif;
-  --radius: 16px; --radius-sm: 10px;
-}
-html { font-size: 15px; }
-body { font-family: var(--font); background: var(--cream); color: var(--text); min-height: 100vh; }
-body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(ellipse 60% 50% at 15% 20%, rgba(200,223,245,0.4) 0%, transparent 70%),
-              radial-gradient(ellipse 50% 60% at 85% 80%, rgba(198,234,216,0.3) 0%, transparent 70%); }
-.wrap { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 0 24px 80px; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* LOGIN */
-#login-screen { max-width: 420px; margin: 0 auto; padding-top: 60px; display: none; }
-.login-hero { text-align: center; margin-bottom: 32px; }
-.login-hero h1 { font-family: var(--serif); font-size: 2rem; font-weight: 400; line-height: 1.2; margin-bottom: 8px; }
-.login-hero h1 em { color: var(--accent); font-style: italic; }
-.login-hero p { color: var(--muted); font-size: 0.88rem; }
+  :root {
+    --sky: #c8dff5;
+    --mint: #c6ead8;
+    --cream: #faf9f7;
+    --stone: #f0ede8;
+    --text: #1a2030;
+    --muted: #7a8399;
+    --accent: #4a7fa5;
+    --green: #3a8c65;
+    --warn: #c0785a;
+    --border: rgba(26,32,48,0.08);
+    --card: rgba(255,255,255,0.72);
+    --font: 'DM Sans', sans-serif;
+    --serif: 'DM Serif Display', serif;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
 
-/* SHARED */
-.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 14px; backdrop-filter: blur(8px); }
-.card-title { font-size: 0.78rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px; }
-.form-group { margin-bottom: 12px; }
-.form-group label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-.form-group input { width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: rgba(255,255,255,0.85); font-family: var(--font); font-size: 0.93rem; color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
-.form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,127,165,0.1); }
-.error-msg { background: rgba(192,120,90,0.1); border: 1px solid rgba(192,120,90,0.2); border-radius: var(--radius-sm); color: var(--warn); font-size: 0.85rem; padding: 10px 14px; margin-bottom: 12px; display: none; }
-.error-msg.show { display: block; }
-.section { display: none; } .section.active { display: block; }
+  html { font-size: 15px; }
 
-/* HEADER */
-header { display: flex; align-items: center; justify-content: space-between; padding: 24px 0 20px; border-bottom: 1px solid var(--border); margin-bottom: 22px; flex-wrap: wrap; gap: 10px; }
-.logo { display: flex; align-items: center; gap: 10px; }
-.logo-name { font-family: var(--serif); font-size: 1.2rem; }
-.logo-name span { color: var(--accent); font-style: italic; }
-.header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.api-status { font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; cursor: pointer; }
-.api-ok { background: rgba(198,234,216,0.6); color: var(--green); }
-.api-missing { background: rgba(192,120,90,0.1); color: var(--warn); }
+  body {
+    font-family: var(--font);
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
 
-/* TABS */
-.tabs { display: flex; gap: 4px; background: var(--stone); border-radius: var(--radius-sm); padding: 4px; margin-bottom: 22px; overflow-x: auto; scrollbar-width: none; }
-.tabs::-webkit-scrollbar { display: none; }
-.tab { flex: 1; min-width: fit-content; padding: 9px 13px; border-radius: 7px; border: none; background: transparent; font-family: var(--font); font-size: 0.83rem; font-weight: 500; color: var(--muted); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-.tab.active { background: white; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  /* Background blobs */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 15% 20%, rgba(200,223,245,0.45) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 60% at 85% 80%, rgba(198,234,216,0.35) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 40% at 50% 50%, rgba(240,237,232,0.6) 0%, transparent 80%);
+    pointer-events: none;
+    z-index: 0;
+  }
 
-/* WEEK NAV */
-.week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.week-label { flex: 1; text-align: center; font-weight: 500; font-size: 1rem; }
-.nav-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); transition: all 0.15s; }
-.nav-btn:hover { background: var(--stone); color: var(--text); }
+  .wrap { position: relative; z-index: 1; max-width: 580px; margin: 0 auto; padding: 0 20px 60px; }
 
-/* STATS */
-.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
-.stat { background: var(--stone); border-radius: var(--radius-sm); padding: 12px 14px; }
-.stat-label { font-size: 0.7rem; color: var(--muted); margin-bottom: 3px; }
-.stat-val { font-size: 1.35rem; font-weight: 500; font-variant-numeric: tabular-nums; }
-.stat-sub { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
-.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-@media(max-width:640px) { .two-col { grid-template-columns: 1fr; } }
+  /* Header */
+  .site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 24px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 32px; height: 32px;
+    position: relative;
+  }
+  .logo-mark svg { width: 32px; height: 32px; }
+  .logo-name {
+    font-family: var(--serif);
+    font-size: 1.2rem;
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+  .logo-name span { color: var(--accent); font-style: italic; }
 
-/* PERSON ROWS */
-.person-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 8px; font-size: 0.87rem; flex-wrap: wrap; }
-.person-row:last-child { border-bottom: none; }
-.person-name { font-weight: 500; flex: 1; min-width: 120px; }
-.person-sub { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
-.badge { padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 500; white-space: nowrap; }
-.badge-green { background: rgba(198,234,216,0.6); color: var(--green); }
-.badge-blue { background: rgba(200,223,245,0.6); color: var(--accent); }
-.badge-up { background: rgba(192,120,90,0.1); color: var(--warn); }
-.badge-down { background: rgba(58,140,101,0.1); color: var(--green); }
-.badge-same { background: var(--stone); color: var(--muted); }
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    backdrop-filter: blur(12px);
+    margin-bottom: 14px;
+  }
+  .card-sm { padding: 16px 20px; }
 
-/* MANDJE */
-.mandje-header-row { display: grid; grid-template-columns: 1fr 90px 110px 55px auto; gap: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
-.mandje-header-row span { font-size: 0.7rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.mandje-row { display: grid; grid-template-columns: 1fr 90px 110px 55px auto; gap: 6px; align-items: center; margin-bottom: 6px; }
-.mandje-row input, .mandje-row select { padding: 7px 9px; border-radius: 7px; border: 1px solid var(--border); background: rgba(255,255,255,0.9); font-family: var(--font); font-size: 0.83rem; color: var(--text); outline: none; width: 100%; transition: border-color 0.15s; }
-.mandje-row input:focus, .mandje-row select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(74,127,165,0.1); }
-.diff-badge { font-size: 0.68rem; padding: 2px 5px; border-radius: 4px; white-space: nowrap; }
+  /* Login screen */
+  #login-screen {
+    padding-top: 40px;
+  }
+  .login-hero {
+    text-align: center;
+    margin-bottom: 36px;
+  }
+  .login-hero h1 {
+    font-family: var(--serif);
+    font-size: 2.2rem;
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+  .login-hero h1 em { color: var(--accent); font-style: italic; }
+  .login-hero p { color: var(--muted); font-size: 0.9rem; }
 
-/* BUTTONS */
-.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: var(--radius-sm); border: none; font-family: var(--font); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.18s; }
-.btn-primary { background: var(--text); color: white; justify-content: center; }
-.btn-primary:hover { background: #2a3040; transform: translateY(-1px); }
-.btn-full { width: 100%; padding: 12px; font-size: 0.95rem; }
-.btn-secondary { background: var(--stone); color: var(--text); border: 1px solid var(--border); }
-.btn-secondary:hover { background: #e5e0d8; }
-.btn-green { background: var(--mint); color: var(--green); border: 1px solid rgba(58,140,101,0.2); }
-.btn-green:hover { background: #b5e0ca; }
-.btn-accent { background: var(--sky); color: var(--accent); border: 1px solid rgba(74,127,165,0.2); }
-.btn-accent:hover { background: #b8d4ee; }
-.btn-sm { padding: 7px 12px; font-size: 0.8rem; }
-.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-.del-btn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; transition: all 0.15s; flex-shrink: 0; }
-.del-btn:hover { background: rgba(192,120,90,0.1); color: var(--warn); border-color: rgba(192,120,90,0.2); }
+  .form-group { margin-bottom: 12px; }
+  .form-group label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.8);
+    font-family: var(--font);
+    font-size: 0.93rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+  .form-group select:focus,
+  .form-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(74,127,165,0.12);
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '↓';
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    pointer-events: none;
+    font-size: 0.8rem;
+  }
 
-/* TOTAAL */
-.totaal-row { display: flex; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border); margin-top: 8px; font-weight: 500; }
-.info-row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 0.87rem; }
-.info-row span:first-child { color: var(--muted); }
-.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
-.bestelling-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.bestelling-title { font-weight: 500; font-size: 0.93rem; }
+  .error-msg {
+    background: rgba(192,120,90,0.1);
+    border: 1px solid rgba(192,120,90,0.2);
+    border-radius: var(--radius-sm);
+    color: var(--warn);
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
 
-/* TABLE */
-.tbl { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-.tbl th { text-align: left; font-weight: 500; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 6px 6px 0; border-bottom: 1px solid var(--border); }
-.tbl td { padding: 8px 6px 8px 0; border-bottom: 1px solid var(--border); }
-.tbl tr:last-child td { border-bottom: none; }
-.tbl td:last-child, .tbl th:last-child { text-align: right; }
-.tbl tr.total-row td { font-weight: 500; border-top: 2px solid var(--border); border-bottom: none; padding-top: 10px; }
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 12px 20px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: var(--font);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    width: 100%;
+    background: var(--text);
+    color: white;
+    padding: 13px;
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary:hover { background: #2a3040; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 8px 14px;
+    font-size: 0.83rem;
+  }
+  .btn-ghost:hover { background: var(--stone); color: var(--text); }
+  .btn-danger { background: rgba(192,120,90,0.12); color: var(--warn); border: 1px solid rgba(192,120,90,0.2); padding: 7px 12px; font-size: 0.82rem; }
+  .btn-danger:hover { background: rgba(192,120,90,0.2); }
+  .btn-export {
+    background: var(--mint);
+    color: var(--green);
+    border: 1px solid rgba(58,140,101,0.2);
+    padding: 10px 18px;
+  }
+  .btn-export:hover { background: #b5e0ca; }
+  .btn-save {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 11px 22px;
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-save:hover { background: #3a6f95; transform: translateY(-1px); }
+  .btn-save:disabled { background: var(--muted); cursor: default; transform: none; }
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+  }
+  .save-bar.visible { transform: translateY(0); }
+  .save-bar-text { font-size: 0.85rem; color: var(--muted); }
+  .deadline-banner {
+    background: rgba(192,120,90,0.08);
+    border: 1px solid rgba(192,120,90,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    color: var(--warn);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .deadline-banner.ok {
+    background: rgba(58,140,101,0.08);
+    border-color: rgba(58,140,101,0.2);
+    color: var(--green);
+  }
+  .not-filled-banner {
+    background: rgba(74,127,165,0.08);
+    border: 1px solid rgba(74,127,165,0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+  .order-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(8px);
+  }
+  .order-block-title {
+    font-weight: 500;
+    font-size: 0.88rem;
+    margin-bottom: 10px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .order-badge {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--sky);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .allergy-tag {
+    display: inline-block;
+    background: rgba(192,120,90,0.1);
+    color: var(--warn);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 4px;
+  }
 
-/* MONTH */
-.month-pick { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
-.month-pick select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: white; font-family: var(--font); font-size: 0.87rem; color: var(--text); outline: none; cursor: pointer; }
+  /* App screen */
+  #app-screen { display: none; }
 
-/* UPLOAD */
-.upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.5); }
-.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(74,127,165,0.05); }
-.upload-zone p { color: var(--muted); font-size: 0.83rem; margin-top: 6px; }
-.upload-zone input { display: none; }
-.ai-result { background: rgba(74,127,165,0.06); border: 1px solid rgba(74,127,165,0.15); border-radius: var(--radius-sm); padding: 11px 14px; margin-top: 10px; font-size: 0.83rem; color: var(--accent); }
-.ai-loading { display: flex; align-items: center; gap: 10px; padding: 12px 0; color: var(--accent); font-size: 0.85rem; }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 0 18px;
+  }
+  .topbar-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--sky);
+    color: var(--accent);
+    font-weight: 500;
+    font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: 0.02em;
+  }
+  .avatar.admin { background: var(--mint); color: var(--green); }
+  .user-name { font-weight: 500; font-size: 0.93rem; }
 
-/* INKOOP */
-.inkoop-section { margin-bottom: 1.1rem; }
-.inkoop-section-title { font-size: 0.7rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-.inkoop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px; }
-.inkoop-item { background: var(--stone); border-radius: var(--radius-sm); padding: 8px 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.inkoop-name { font-size: 0.82rem; color: var(--text); flex: 1; }
-.inkoop-qty { font-size: 0.9rem; font-weight: 500; color: var(--text); white-space: nowrap; }
-.inkoop-note { font-size: 0.68rem; color: var(--muted); font-style: italic; }
-.bestelling-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-.btab { padding: 6px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.82rem; font-weight: 500; cursor: pointer; background: transparent; color: var(--muted); font-family: var(--font); transition: all 0.15s; }
-.btab.active { background: var(--stone); color: var(--text); border-color: var(--text); }
+  /* Tab nav */
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--stone);
+    border-radius: var(--radius-sm);
+    padding: 4px;
+    margin-bottom: 18px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex: 1;
+    min-width: fit-content;
+    padding: 8px 12px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    font-family: var(--font);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab-btn.active {
+    background: white;
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
 
-/* MODAL */
-.modal-bg { position: fixed; inset: 0; background: rgba(26,32,48,0.4); backdrop-filter: blur(4px); z-index: 500; display: flex; align-items: center; justify-content: center; }
-.modal { background: white; border-radius: var(--radius); padding: 26px; max-width: 440px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
-.modal h2 { font-family: var(--serif); font-size: 1.4rem; margin-bottom: 8px; }
-.modal p { font-size: 0.87rem; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
-.modal input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); font-family: var(--font); font-size: 0.87rem; margin-bottom: 12px; outline: none; }
-.modal input:focus { border-color: var(--accent); }
+  /* Section label */
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 12px;
+  }
 
-/* LOADING */
-#loading { position: fixed; inset: 0; background: rgba(250,249,247,0.92); backdrop-filter: blur(8px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999; gap: 12px; font-size: 0.9rem; color: var(--muted); }
-.spinner { width: 26px; height: 26px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.hint { font-size: 0.75rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
-.empty-state { text-align: center; padding: 24px; color: var(--muted); font-size: 0.85rem; }
-input[type=number] { -moz-appearance: textfield; }
-input[type=number]::-webkit-outer-spin-button, input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  /* Week nav */
+  .week-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .week-label {
+    flex: 1;
+    text-align: center;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text);
+  }
+  .nav-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+  }
+  .nav-btn:hover { background: var(--stone); color: var(--text); }
+
+  /* Day rows */
+  .day-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+  }
+  .day-row:last-child { border-bottom: none; }
+  .day-name {
+    font-weight: 500;
+    font-size: 0.88rem;
+    min-width: 86px;
+  }
+  .meal-pills { display: flex; gap: 6px; flex: 1; }
+  .meal-pill {
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s;
+  }
+  .meal-pill.present {
+    background: rgba(198,234,216,0.6);
+    border-color: rgba(58,140,101,0.25);
+    color: var(--green);
+  }
+  .meal-pill.absent {
+    background: rgba(192,120,90,0.1);
+    border-color: rgba(192,120,90,0.2);
+    color: var(--warn);
+  }
+  .meal-pill.closed {
+    background: var(--stone);
+    border-color: var(--border);
+    color: var(--muted);
+    cursor: default;
+    font-size: 0.75rem;
+  }
+
+  /* Stat grid */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .stat-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    backdrop-filter: blur(8px);
+  }
+  .stat-box .s-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+  .stat-box .s-val { font-size: 1.45rem; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* Person rows */
+  .person-row {
+    display: flex;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    font-size: 0.87rem;
+  }
+  .person-row:last-child { border-bottom: none; }
+  .person-name { font-weight: 500; flex: 1; }
+  .person-sub { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
+  .person-cost {
+    background: rgba(198,234,216,0.6);
+    color: var(--green);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* Settings rows */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+    font-size: 0.88rem;
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { flex: 1; font-weight: 500; }
+  .setting-row input[type=number] {
+    width: 80px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.8);
+    font-family: var(--font);
+    font-size: 0.88rem;
+    color: var(--text);
+    outline: none;
+    text-align: right;
+  }
+  .setting-row input[type=number]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(74,127,165,0.12);
+  }
+
+  /* Add user row */
+  .add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  .add-row input {
+    flex: 1;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.8);
+    font-family: var(--font);
+    font-size: 0.87rem;
+    color: var(--text);
+    outline: none;
+  }
+  .add-row input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(74,127,165,0.12);
+  }
+  .btn-add {
+    padding: 9px 16px;
+    background: var(--sky);
+    color: var(--accent);
+    border: 1px solid rgba(74,127,165,0.2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .btn-add:hover { background: #b8d4ee; }
+
+  /* User edit rows */
+  .user-edit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .user-edit-row:last-child { border-bottom: none; }
+  .user-edit-row input {
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.8);
+    font-family: var(--font);
+    font-size: 0.85rem;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .user-edit-row input:focus { border-color: var(--accent); }
+  .user-edit-row input.name-inp { flex: 1.2; }
+  .user-edit-row input.pw-inp { flex: 1; }
+
+  /* Month select */
+  .month-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .month-controls select {
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.8);
+    font-family: var(--font);
+    font-size: 0.87rem;
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+  }
+
+  .export-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+  /* Hint text */
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+
+  /* Footer */
+  .site-footer {
+    text-align: center;
+    padding: 24px 0 8px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
+  /* Animate in */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card, .stat-box { animation: fadeUp 0.3s ease both; }
+  .card:nth-child(2) { animation-delay: 0.05s; }
+  .card:nth-child(3) { animation-delay: 0.1s; }
 </style>
 </head>
 <body>
 
-<div id="loading"><div class="spinner"></div><span id="loading-msg">Laden...</span></div>
+<div class="wrap">
 
-<!-- API KEY MODAL -->
-<div id="modal-api" class="modal-bg" style="display:none">
-  <div class="modal">
-    <h2>Claude API key</h2>
-    <p>Voer je Anthropic API key in om Picnic screenshots automatisch uit te lezen. Wordt lokaal opgeslagen in je browser.</p>
-    <input type="password" id="api-key-input" placeholder="sk-ant-api03-...">
-    <div class="btn-row">
-      <button class="btn btn-green" onclick="saveApiKey()">Opslaan</button>
-      <button class="btn btn-secondary" onclick="closeModal('modal-api')">Annuleren</button>
-    </div>
-    <p class="hint" style="margin-top:10px">Nog geen key? <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a> → API Keys → Create Key</p>
-  </div>
-</div>
-
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-hero">
-    <svg width="40" height="40" viewBox="0 0 32 32" fill="none" style="margin:0 auto 16px;display:block">
-      <circle cx="10" cy="10" r="7" fill="#c8dff5" opacity="0.9"/>
-      <circle cx="22" cy="10" r="7" fill="#c6ead8" opacity="0.9"/>
-      <circle cx="10" cy="22" r="7" fill="#c6ead8" opacity="0.7"/>
-      <circle cx="22" cy="22" r="7" fill="#c8dff5" opacity="0.7"/>
-      <circle cx="16" cy="16" r="5" fill="white" opacity="0.85"/>
-    </svg>
-    <h1>Backoffice,<br><em>admin toegang.</em></h1>
-    <p>Hunter Recruitment — Lunch & Ontbijt</p>
-  </div>
-  <div class="card">
-    <div class="form-group">
-      <label>Wachtwoord</label>
-      <input type="password" id="login-pw" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <div class="error-msg" id="login-err">Wachtwoord klopt niet.</div>
-    <button class="btn btn-primary btn-full" onclick="doLogin()">Inloggen →</button>
-  </div>
-</div>
-
-<!-- APP -->
-<div id="app-screen" style="display:none">
-  <div class="wrap">
-    <header>
-      <div class="logo">
-        <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
+  <!-- Shared header -->
+  <header class="site-header">
+    <div class="logo">
+      <div class="logo-mark">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="10" cy="10" r="7" fill="#c8dff5" opacity="0.9"/>
           <circle cx="22" cy="10" r="7" fill="#c6ead8" opacity="0.9"/>
           <circle cx="10" cy="22" r="7" fill="#c6ead8" opacity="0.7"/>
           <circle cx="22" cy="22" r="7" fill="#c8dff5" opacity="0.7"/>
           <circle cx="16" cy="16" r="5" fill="white" opacity="0.85"/>
         </svg>
-        <span class="logo-name">Hunter <span>Backoffice</span></span>
       </div>
-      <div class="header-right">
-        <span id="api-status" class="api-status api-missing" onclick="document.getElementById('modal-api').style.display='flex'">⚠ API key instellen</span>
-        <button class="btn btn-secondary btn-sm" onclick="refreshAll()">↻</button>
-        <button class="btn btn-secondary btn-sm" onclick="doLogout()">Uitloggen</button>
-      </div>
-    </header>
-
-    <div class="tabs">
-      <button class="tab active" id="tab-week" onclick="switchTab('week',this)">Week</button>
-      <button class="tab" id="tab-inkoop" onclick="switchTab('inkoop',this)">Inkooptool</button>
-      <button class="tab" id="tab-mandje" onclick="switchTab('mandje',this)">Mandje</button>
-      <button class="tab" id="tab-verrekening" onclick="switchTab('verrekening',this)">Verrekening</button>
-      <button class="tab" id="tab-maand" onclick="switchTab('maand',this)">Maand</button>
-      <button class="tab" id="tab-instellingen" onclick="switchTab('instellingen',this)">Instellingen</button>
+      <span class="logo-name">Hunter <span>Recruitment</span></span>
     </div>
-
-    <!-- WEEK -->
-    <div id="sec-week" class="section active">
-      <div class="week-nav">
-        <button class="nav-btn" onclick="weekOffset--;renderWeek()">←</button>
-        <span class="week-label" id="week-lbl"></span>
-        <button class="nav-btn" onclick="weekOffset++;renderWeek()">→</button>
-      </div>
-      <div class="stat-grid" id="week-stats"></div>
-      <div class="two-col">
-        <div class="card"><div class="card-title">Bestelling 1 — Ma/Di/Wo</div><div id="b1-week"></div></div>
-        <div class="card"><div class="card-title">Bestelling 2 — Do/Vr</div><div id="b2-week"></div></div>
-      </div>
-      <div class="card"><div class="card-title">Alle medewerkers</div><div id="all-week"></div></div>
+    <div id="header-user" style="display:none">
+      <!-- filled by JS -->
     </div>
+  </header>
 
-    <!-- INKOOPTOOL -->
-    <div id="sec-inkoop" class="section">
-      <div class="week-nav">
-        <button class="nav-btn" onclick="weekOffset--;renderInkoop()">←</button>
-        <span class="week-label" id="inkoop-lbl"></span>
-        <button class="nav-btn" onclick="weekOffset++;renderInkoop()">→</button>
-      </div>
-      <div class="bestelling-tabs">
-        <button class="btab active" id="itab1" onclick="switchInkoopTab(1,this)">Bestelling 1 — ma/di/wo</button>
-        <button class="btab" id="itab2" onclick="switchInkoopTab(2,this)">Bestelling 2 — do/vr</button>
-      </div>
-      <div id="inkoop-b1"></div>
-      <div id="inkoop-b2" style="display:none"></div>
+  <!-- LOGIN -->
+  <div id="login-screen">
+    <div class="login-hero">
+      <h1 id="greeting-text">Goedemorgen,<br><em>welkom terug.</em></h1>
+      <p>Meld je aan voor het lunch &amp; ontbijt overzicht</p>
     </div>
-
-    <!-- MANDJE -->
-    <div id="sec-mandje" class="section">
-      <div class="week-nav">
-        <button class="nav-btn" onclick="weekOffset--;initMandje()">←</button>
-        <span class="week-label" id="mandje-lbl"></span>
-        <button class="nav-btn" onclick="weekOffset++;initMandje()">→</button>
-      </div>
-
-      <!-- Upload B1 -->
-      <div class="card">
-        <div class="card-title">📷 Screenshot uploaden — Bestelling 1 (ma/di/wo)</div>
-        <div class="upload-zone" id="upload-zone-1"
-          onclick="document.getElementById('file-input-1').click()"
-          ondragover="event.preventDefault();this.classList.add('drag')"
-          ondragleave="this.classList.remove('drag')"
-          ondrop="handleDrop(event,1)">
-          <div style="font-size:1.6rem;margin-bottom:4px">📷</div>
-          <strong style="font-size:0.9rem">Sleep of klik — Picnic screenshot bestelling 1</strong>
-          <p>Claude leest alle producten, aantallen en prijzen automatisch uit</p>
-          <input type="file" id="file-input-1" accept="image/*" multiple onchange="handleFileUpload(event,1)">
-        </div>
-        <div id="ai-status-1"></div>
-      </div>
-
-      <!-- Upload B2 -->
-      <div class="card">
-        <div class="card-title">📷 Screenshot uploaden — Bestelling 2 (do/vr)</div>
-        <div class="upload-zone" id="upload-zone-2"
-          onclick="document.getElementById('file-input-2').click()"
-          ondragover="event.preventDefault();this.classList.add('drag')"
-          ondragleave="this.classList.remove('drag')"
-          ondrop="handleDrop(event,2)">
-          <div style="font-size:1.6rem;margin-bottom:4px">📷</div>
-          <strong style="font-size:0.9rem">Sleep of klik — Picnic screenshot bestelling 2</strong>
-          <p>Claude leest alle producten, aantallen en prijzen automatisch uit</p>
-          <input type="file" id="file-input-2" accept="image/*" multiple onchange="handleFileUpload(event,2)">
-        </div>
-        <div id="ai-status-2"></div>
-      </div>
-
-      <!-- B1 items -->
-      <div class="card">
-        <div class="bestelling-meta">
-          <span class="bestelling-title">Bestelling 1 — Maandag (ma/di/wo)</span>
-          <span class="badge badge-blue" id="b1-badge">€0,00</span>
-        </div>
-        <div class="mandje-header-row">
-          <span>Product</span><span>Prijs (€)</span><span>Categorie</span><span>Vorig</span><span></span>
-        </div>
-        <div id="b1-items"></div>
-        <div class="btn-row">
-          <button class="btn btn-secondary btn-sm" onclick="addItem(1)">+ Product</button>
-          <button class="btn btn-secondary btn-sm" onclick="addHunterDefaults(1)">+ Hunter</button>
-          <button class="btn btn-accent btn-sm" onclick="loadVasteProducten(1)">↓ Vaste producten</button>
-        </div>
-        <div class="divider"></div>
-        <div class="totaal-row"><span>Totaal bestelling 1</span><span id="b1-tot">€0,00</span></div>
-        <div class="info-row"><span>Medewerkersdeel</span><span id="b1-med">€0,00</span></div>
-        <div class="info-row"><span>Hunter deel</span><span id="b1-hun">€0,00</span></div>
-      </div>
-
-      <!-- B2 items -->
-      <div class="card">
-        <div class="bestelling-meta">
-          <span class="bestelling-title">Bestelling 2 — Donderdag (do/vr)</span>
-          <span class="badge badge-blue" id="b2-badge">€0,00</span>
-        </div>
-        <div class="mandje-header-row">
-          <span>Product</span><span>Prijs (€)</span><span>Categorie</span><span>Vorig</span><span></span>
-        </div>
-        <div id="b2-items"></div>
-        <div class="btn-row">
-          <button class="btn btn-secondary btn-sm" onclick="addItem(2)">+ Product</button>
-          <button class="btn btn-secondary btn-sm" onclick="addHunterDefaults(2)">+ Hunter</button>
-          <button class="btn btn-accent btn-sm" onclick="loadVasteProducten(2)">↓ Vaste producten</button>
-        </div>
-        <div class="divider"></div>
-        <div class="totaal-row"><span>Totaal bestelling 2</span><span id="b2-tot">€0,00</span></div>
-        <div class="info-row"><span>Medewerkersdeel</span><span id="b2-med">€0,00</span></div>
-        <div class="info-row"><span>Hunter deel</span><span id="b2-hun">€0,00</span></div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-green" onclick="saveMandjeAndCalc()">Opslaan & verrekening berekenen →</button>
-      </div>
-    </div>
-
-    <!-- VERREKENING -->
-    <div id="sec-verrekening" class="section">
-      <div class="week-nav">
-        <button class="nav-btn" onclick="weekOffset--;renderVerrekening()">←</button>
-        <span class="week-label" id="verr-lbl"></span>
-        <button class="nav-btn" onclick="weekOffset++;renderVerrekening()">→</button>
-      </div>
-      <div class="stat-grid" id="verr-stats"></div>
-      <div class="card">
-        <div class="card-title">Werkelijke kosten per persoon</div>
-        <table class="tbl">
-          <thead><tr><th>Naam</th><th>Ontbijten</th><th>Lunches</th><th>Ontbijt €</th><th>Lunch €</th><th>Totaal</th></tr></thead>
-          <tbody id="verr-tbody"></tbody>
-        </table>
-      </div>
-      <div class="btn-row">
-        <button class="btn btn-green" onclick="exportVerrekening()">↓ Excel</button>
-        <button class="btn btn-accent" onclick="copyWhatsApp()">📱 WhatsApp samenvatting</button>
-      </div>
-      <div id="wa-preview" style="display:none" class="card">
-        <div class="card-title">WhatsApp tekst — al gekopieerd</div>
-        <pre id="wa-text" style="font-size:0.82rem;white-space:pre-wrap;color:var(--text);line-height:1.6"></pre>
-      </div>
-    </div>
-
-    <!-- MAAND -->
-    <div id="sec-maand" class="section">
-      <div class="card">
-        <div class="card-title">Maandoverzicht</div>
-        <div class="month-pick">
-          <select id="sel-mo"></select>
-          <select id="sel-yr"></select>
-          <button class="btn btn-secondary btn-sm" onclick="renderMaand()">Laden</button>
-        </div>
-        <div id="maand-content"><div class="empty-state">Kies een maand en klik op laden.</div></div>
-      </div>
-      <div id="maand-btns" class="btn-row" style="display:none">
-        <button class="btn btn-green" onclick="exportMaand()">↓ Excel exporteren</button>
-      </div>
-    </div>
-
-    <!-- INSTELLINGEN -->
-    <div id="sec-instellingen" class="section">
-      <div class="card">
-        <div class="card-title">Wachtwoord wijzigen</div>
-        <div class="form-group"><label>Huidig wachtwoord</label><input type="password" id="pw-current" placeholder="••••••"></div>
-        <div class="form-group"><label>Nieuw wachtwoord</label><input type="password" id="pw-new" placeholder="••••••"></div>
-        <div class="form-group"><label>Herhaal nieuw</label><input type="password" id="pw-new2" placeholder="••••••"></div>
-        <div class="error-msg" id="pw-err"></div>
-        <button class="btn btn-green btn-sm" onclick="changePassword()">Opslaan</button>
-      </div>
-      <div class="card">
-        <div class="card-title">Vaste producten</div>
-        <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px">Worden ingeladen via "↓ Vaste producten" in het mandje.</p>
-        <div id="vaste-list"></div>
-        <div class="btn-row" style="margin-top:12px;align-items:center">
-          <input type="text" id="vast-naam" placeholder="Productnaam" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-family:var(--font);font-size:0.83rem;outline:none;flex:1;min-width:120px">
-          <select id="vast-cat" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-family:var(--font);font-size:0.83rem;outline:none">
-            <option value="Ontbijt">🌅 Ontbijt</option>
-            <option value="Lunch">🥗 Lunch</option>
-            <option value="Beide">🍽️ Beide</option>
-            <option value="Hunter">🏢 Hunter</option>
+    <div class="card">
+      <div class="form-group">
+        <label>Wie ben jij?</label>
+        <div class="select-wrap">
+          <select id="sel">
+            <option value="">Kies je naam...</option>
+            <option value="__admin__">⚙ Beheer (Admin)</option>
           </select>
-          <select id="vast-best" style="padding:8px 10px;border-radius:8px;border:1px solid var(--border);font-family:var(--font);font-size:0.83rem;outline:none">
-            <option value="1">Best. 1</option>
-            <option value="2">Best. 2</option>
-            <option value="0">Beide</option>
-          </select>
-          <button class="btn btn-primary btn-sm" onclick="addVastProduct()" style="width:auto">+ Voeg toe</button>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">Prijzen (uit portaal)</div>
-        <div class="info-row"><span>Ontbijt p.p./dag</span><span id="set-ont">€—</span></div>
-        <div class="info-row"><span>Lunch p.p./dag</span><span id="set-lun">€—</span></div>
-        <p class="hint" style="margin-top:6px">Aanpassen via het portaal → Instellingen.</p>
+      <div class="form-group">
+        <label>Wachtwoord</label>
+        <input type="password" id="pw" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
-      <div class="card">
-        <div class="card-title">Claude API key</div>
-        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-api').style.display='flex'">API key wijzigen</button>
-        <p class="hint" style="margin-top:8px">Lokaal opgeslagen in je browser, nooit verstuurd.</p>
-      </div>
+      <div class="error-msg" id="err">Naam of wachtwoord klopt niet.</div>
+      <button class="btn btn-primary" onclick="doLogin()">Inloggen &rarr;</button>
     </div>
-
+    <p class="hint" style="text-align:center">Standaard wachtwoord: voornaam + "1" &nbsp;·&nbsp; Neem contact op met je beheerder voor hulp</p>
   </div>
+
+  <!-- APP -->
+  <div id="app-screen">
+    <!-- Topbar with user + logout -->
+    <div class="topbar">
+      <div class="topbar-user">
+        <div class="avatar" id="av"></div>
+        <span class="user-name" id="un"></span>
+      </div>
+      <button class="btn btn-ghost" onclick="doLogout()">Uitloggen</button>
+      <button class="btn btn-ghost" style="font-size:0.8rem" onclick="refreshData()">↻ Ververs</button>
+    </div>
+
+    <!-- USER VIEW -->
+    <!-- Save bar -->
+<div class="save-bar" id="save-bar">
+  <span class="save-bar-text" id="save-bar-text">Je hebt wijzigingen — vergeet niet op te slaan</span>
+  <button class="btn-save" id="save-btn" onclick="commitSave()">Opslaan ↑</button>
+</div>
+<div id="user-view">
+      <div class="week-nav">
+        <button class="nav-btn" onclick="UI.weekOffset--;render()">&#8592;</button>
+        <span class="week-label" id="u-week-label"></span>
+        <button class="nav-btn" onclick="UI.weekOffset++;render()">&#8594;</button>
+      </div>
+      <div class="card" id="u-days-card"><!-- days --></div>
+      <div class="stat-row" id="u-stats"><!-- stats --></div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="admin-view" style="display:none">
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="week" onclick="switchTab(this,'week')">Week</button>
+        <button class="tab-btn" data-tab="sluiten" onclick="switchTab(this,'sluiten')">Sluiten</button>
+        <button class="tab-btn" data-tab="maand" onclick="switchTab(this,'maand')">Maand</button>
+        <button class="tab-btn" data-tab="mensen" onclick="switchTab(this,'mensen')">Medewerkers</button>
+        <button class="tab-btn" data-tab="instellingen" onclick="switchTab(this,'instellingen')">Instellingen</button>
+      </div>
+      <div id="tab-week"></div>
+      <div id="tab-sluiten" style="display:none"></div>
+      <div id="tab-maand" style="display:none"></div>
+      <div id="tab-mensen" style="display:none"></div>
+      <div id="tab-instellingen" style="display:none"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">Hunter Recruitment &copy; 2025 &nbsp;·&nbsp; Lunch & Ontbijt Portaal</footer>
 </div>
 
 <script>
-const SB_URL = "https://xyxkrguwvswdbkwrdewc.supabase.co";
-const SB_KEY = "sb_publishable_nLySbH2NWhHq-ErnzUve4Q_XBahlls6";
-const ADMIN_PW_KEY = "hunter_admin_pw";
-const DEFAULT_PW = "admin123";
-const HUNTER_DEFAULTS = ["Melk","Vuilniszakken","Cola Zero","Cola normaal","Pindakaas 100%","Calve pindakaas","Zout","Peper","Chips","Borrelhapjes","Alcohol","Huishoudproducten"];
-const DAYS = ["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag"];
-const MONTHS_NL = ["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"];
+// ── DATA ──────────────────────────────────────────────────
+let DATA = {
+  users: [
+    {name:"Mark van der Heijden",password:"mark1"},
+    {name:"Rachid el Bakuri",password:"rachid1"},
+    {name:"Florentine Sonder",password:"florentine1"},
+    {name:"Victor van der Wees",password:"victor1"},
+    {name:"Jemima Huijer",password:"jemima1"},
+    {name:"Bart van Heeswijk",password:"bart1"},
+    {name:"Arjen Knoppert",password:"arjen1"},
+    {name:"May Zuidgeest",password:"may1"},
+    {name:"Jenna Kooistra",password:"jenna1"},
+    {name:"Barbara Peters",password:"barbara1"},
+    {name:"Raphaël Stut",password:"raphael1"},
+    {name:"Sem Ebbing",password:"sem1"},
+    {name:"Rosalie Ladestein",password:"rosalie1"},
+  ],
+  prices:{Ontbijt:2.50,Lunch:3.50},
+  absences:{},
+  closedDays:{}
+};
 
-let weekOffset = 0;
-let DB = { users:[], absences:[], closedDays:[], priceOnt:1.50, priceLun:3.50 };
-let vasteProducten = [];
-let mandjeCache = {};
-let verrRows = null;
-let inkoopActiveB = 1;
+let UI = {
+  loggedIn: null,
+  weekOffset: 0,
+  adminTab: "week",
+  selectedMonth: new Date().getMonth(),
+  selectedYear: new Date().getFullYear()
+};
 
-// ── AUTH ──────────────────────────────────────────────────
-function getStoredPw() { return localStorage.getItem(ADMIN_PW_KEY) || DEFAULT_PW; }
-function doLogin() {
-  const pw = document.getElementById("login-pw").value;
-  if (pw === getStoredPw()) {
-    sessionStorage.setItem("hunter_auth","1");
-    document.getElementById("login-screen").style.display = "none";
-    document.getElementById("app-screen").style.display = "block";
-    document.getElementById("login-err").classList.remove("show");
-    startApp();
-  } else {
-    document.getElementById("login-err").classList.add("show");
-    document.getElementById("login-pw").value = "";
+// ── JSONBIN CONFIG ────────────────────────────────────────
+const JSONBIN_MASTER_KEY = "$2a$10$x8JB/aZdrTaBHWBKlxBggOoVFATZRydTq32QI4pecRaWWLsSbu8IC";
+const JSONBIN_BIN_ID_KEY = "hunter_lp_bin_id";
+let JSONBIN_BIN_ID = localStorage.getItem(JSONBIN_BIN_ID_KEY) || null;
+
+// Show loading overlay
+function showLoading(msg) {
+  let el = document.getElementById("loading-overlay");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "loading-overlay";
+    el.style.cssText = "position:fixed;inset:0;background:rgba(250,249,247,0.85);backdrop-filter:blur(8px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;font-family:var(--font);color:var(--muted);font-size:0.9rem;gap:12px;";
+    el.innerHTML = '<div style="width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;"></div><span id="loading-msg">Laden...</span>';
+    const style = document.createElement("style");
+    style.textContent = "@keyframes spin{to{transform:rotate(360deg)}}";
+    document.head.appendChild(style);
+    document.body.appendChild(el);
   }
+  document.getElementById("loading-msg").textContent = msg || "Laden...";
+  el.style.display = "flex";
 }
-function doLogout() {
-  sessionStorage.removeItem("hunter_auth");
-  document.getElementById("app-screen").style.display = "none";
-  document.getElementById("login-screen").style.display = "block";
-  document.getElementById("login-pw").value = "";
-}
-function changePassword() {
-  const cur = document.getElementById("pw-current").value;
-  const nw = document.getElementById("pw-new").value;
-  const nw2 = document.getElementById("pw-new2").value;
-  const el = document.getElementById("pw-err");
-  el.style = ""; el.classList.remove("show");
-  if (cur !== getStoredPw()) { el.textContent="Huidig wachtwoord klopt niet."; el.classList.add("show"); return; }
-  if (nw.length < 4) { el.textContent="Minimaal 4 tekens."; el.classList.add("show"); return; }
-  if (nw !== nw2) { el.textContent="Wachtwoorden komen niet overeen."; el.classList.add("show"); return; }
-  localStorage.setItem(ADMIN_PW_KEY, nw);
-  ["pw-current","pw-new","pw-new2"].forEach(id => document.getElementById(id).value = "");
-  el.textContent="✓ Wachtwoord gewijzigd!";
-  el.style.cssText="background:rgba(58,140,101,0.1);border-color:rgba(58,140,101,0.2);color:var(--green)";
-  el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 3000);
+function hideLoading() {
+  const el = document.getElementById("loading-overlay");
+  if (el) el.style.display = "none";
 }
 
-// ── SUPABASE ──────────────────────────────────────────────
-async function sb(path, opts={}) {
-  const res = await fetch(SB_URL+"/rest/v1"+path, {
-    ...opts,
-    headers: { "apikey":SB_KEY, "Authorization":"Bearer "+SB_KEY, "Content-Type":"application/json", "Prefer":opts.prefer||"return=representation", ...(opts.headers||{}) }
-  });
-  if (!res.ok) throw new Error(await res.text());
-  const t = await res.text();
-  return t ? JSON.parse(t) : [];
+async function loadFromBin() {
+  if (!JSONBIN_BIN_ID) {
+    // First time: create a new bin
+    showLoading("Eerste keer opstarten...");
+    try {
+      const res = await fetch("https://api.jsonbin.io/v3/b", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Master-Key": JSONBIN_MASTER_KEY,
+          "X-Bin-Name": "hunter-lunch-portal"
+        },
+        body: JSON.stringify(DATA)
+      });
+      const json = await res.json();
+      JSONBIN_BIN_ID = json.metadata?.id;
+      if (JSONBIN_BIN_ID) {
+        localStorage.setItem(JSONBIN_BIN_ID_KEY, JSONBIN_BIN_ID);
+        alert("Nieuwe dataopslag aangemaakt! Bin ID: " + JSONBIN_BIN_ID + "\n\nDeel dit ID met je collega's zodat iedereen dezelfde data gebruikt. Sla het op!");
+      }
+    } catch(e) { console.error("Kon bin niet aanmaken", e); }
+    hideLoading();
+    return;
+  }
+  showLoading("Data ophalen...");
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+      headers: { "X-Master-Key": JSONBIN_MASTER_KEY }
+    });
+    const json = await res.json();
+    if (json.record) {
+      DATA = Object.assign(DATA, json.record);
+    }
+  } catch(e) { console.error("Laden mislukt", e); }
+  hideLoading();
+}
+
+async function save() {
+  if (!JSONBIN_BIN_ID) return;
+  try {
+    // Fetch latest first to prevent overwriting others changes
+    const fetchRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+      headers: { "X-Master-Key": JSONBIN_MASTER_KEY }
+    });
+    const fetchJson = await fetchRes.json();
+    if (fetchJson.record) {
+      const remote = fetchJson.record;
+      // Merge absences
+      const mergedAbsences = JSON.parse(JSON.stringify(remote.absences || {}));
+      Object.keys(DATA.absences || {}).forEach(user => {
+        if (!mergedAbsences[user]) mergedAbsences[user] = {};
+        Object.keys(DATA.absences[user] || {}).forEach(wk => {
+          if (!mergedAbsences[user][wk]) mergedAbsences[user][wk] = {};
+          Object.assign(mergedAbsences[user][wk], DATA.absences[user][wk]);
+        });
+      });
+      // Merge closedDays
+      const mergedClosed = Object.assign({}, remote.closedDays || {}, DATA.closedDays || {});
+      // Merge allergies
+      const mergedAllergies = Object.assign({}, remote.allergies || {}, DATA.allergies || {});
+      DATA.absences = mergedAbsences;
+      DATA.closedDays = mergedClosed;
+      DATA.allergies = mergedAllergies;
+    }
+    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Master-Key": JSONBIN_MASTER_KEY
+      },
+      body: JSON.stringify(DATA)
+    });
+  } catch(e) { console.error("Opslaan mislukt", e); }
 }
 
 // ── DATES ─────────────────────────────────────────────────
-function getMonday(off) { const d=new Date(); d.setDate(d.getDate()-((d.getDay()+6)%7)+off*7); d.setHours(0,0,0,0); return d; }
-function getWeekKey(off) { return getMonday(off).toISOString().slice(0,10); }
-function getDayKey(wk,i) { const d=new Date(wk); d.setDate(d.getDate()+i); return d.toISOString().slice(0,10); }
-function getWeekLabel(off) {
-  const d=getMonday(off), e=new Date(d); e.setDate(e.getDate()+4);
+const DAYS=["Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag"];
+const MEALS=["Ontbijt","Lunch"];
+const MONTHS=["Januari","Februari","Maart","April","Mei","Juni","Juli","Augustus","September","Oktober","November","December"];
+
+function getMonday(offset){
+  const d=new Date();
+  d.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);
+  d.setHours(0,0,0,0);
+  return d;
+}
+function getWeekKey(offset){return getMonday(offset).toISOString().slice(0,10);}
+function getDayKey(weekKey,dayIdx){
+  const d=new Date(weekKey); d.setDate(d.getDate()+dayIdx); return d.toISOString().slice(0,10);
+}
+function getWeekLabel(offset){
+  const d=getMonday(offset);
+  const e=new Date(d); e.setDate(e.getDate()+4);
   return d.toLocaleDateString("nl-NL",{day:"numeric",month:"short"})+" – "+e.toLocaleDateString("nl-NL",{day:"numeric",month:"short"});
 }
-function fmt(n) { return "€"+(n||0).toFixed(2).replace(".",","); }
 
 // ── LOGIC ─────────────────────────────────────────────────
-function isAbsent(user,wk,day,meal) { return DB.absences.some(a=>a.user_name===user&&a.week_key===wk&&a.day===day&&a.meal===meal&&a.absent===true); }
-function isClosed(wk,i,meal) { const dk=getDayKey(wk,i); return DB.closedDays.some(c=>c.day_key===dk&&c.meal===meal&&c.closed===true); }
-function countUser(user,wk,idxs) {
+function isAbsent(user,wk,day,meal){return!!(DATA.absences[user]?.[wk]?.[day]?.[meal]);}
+function isClosed(wk,i,meal){return!!(DATA.closedDays[getDayKey(wk,i)]?.[meal]);}
+
+function toggleAbsence(user,wk,day,meal){
+  if(!DATA.absences[user])DATA.absences[user]={};
+  if(!DATA.absences[user][wk])DATA.absences[user][wk]={};
+  if(!DATA.absences[user][wk][day])DATA.absences[user][wk][day]={};
+  DATA.absences[user][wk][day][meal]=!DATA.absences[user][wk][day][meal];
+  markPending();
+  render();
+}
+function toggleClosed(wk,i,meal){
+  const dk=getDayKey(wk,i);
+  if(!DATA.closedDays[dk])DATA.closedDays[dk]={};
+  DATA.closedDays[dk][meal]=!DATA.closedDays[dk][meal];
+  markPending();
+  render();
+}
+function closeWholeDay(wk,i){
+  const dk=getDayKey(wk,i);
+  if(!DATA.closedDays[dk])DATA.closedDays[dk]={};
+  MEALS.forEach(m=>DATA.closedDays[dk][m]=true);
+  markPending();
+  render();
+}
+
+function countWeek(user,wk){
   let o=0,l=0;
-  idxs.forEach(i=>{ if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(user,wk,DAYS[i],"Ontbijt"))o++; if(!isClosed(wk,i,"Lunch")&&!isAbsent(user,wk,DAYS[i],"Lunch"))l++; });
-  return {o,l};
+  DAYS.forEach((d,i)=>{
+    if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(user,wk,d,"Ontbijt"))o++;
+    if(!isClosed(wk,i,"Lunch")&&!isAbsent(user,wk,d,"Lunch"))l++;
+  });
+  return{o,l};
 }
-function bStats(wk,idxs) { let o=0,l=0; DB.users.forEach(u=>{const c=countUser(u.name,wk,idxs);o+=c.o;l+=c.l;}); return {o,l}; }
 
-// ── WEEK ──────────────────────────────────────────────────
-function renderWeek() {
-  const wk=getWeekKey(weekOffset);
-  document.getElementById("week-lbl").textContent=getWeekLabel(weekOffset);
-  const b1s=bStats(wk,[0,1,2]),b2s=bStats(wk,[3,4]),to=b1s.o+b2s.o,tl=b1s.l+b2s.l;
-  document.getElementById("week-stats").innerHTML=`
-    <div class="stat"><div class="stat-label">Ontbijten</div><div class="stat-val">${to}</div></div>
-    <div class="stat"><div class="stat-label">Lunches</div><div class="stat-val">${tl}</div></div>
-    <div class="stat"><div class="stat-label">Best.1 maaltijden</div><div class="stat-val">${b1s.o+b1s.l}</div></div>
-    <div class="stat"><div class="stat-label">Best.2 maaltijden</div><div class="stat-val">${b2s.o+b2s.l}</div></div>
-    <div class="stat"><div class="stat-label">Verwachte kosten</div><div class="stat-val">${fmt(to*DB.priceOnt+tl*DB.priceLun)}</div></div>`;
-  function renderB(elId,idxs) {
-    const s=bStats(wk,idxs);
-    let h=`<div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">${s.o} ontbijten · ${s.l} lunches</div>`;
-    DB.users.forEach(u=>{ const c=countUser(u.name,wk,idxs); if(c.o+c.l===0)return;
-      h+=`<div class="person-row"><span class="person-name">${u.name}</span><span class="person-sub">${c.o}× ont &nbsp;${c.l}× lunch</span><span class="badge badge-green">${fmt(c.o*DB.priceOnt+c.l*DB.priceLun)}</span></div>`; });
-    document.getElementById(elId).innerHTML=h;
+function getWeeksInMonth(yr,mo){
+  const weeks=new Set();
+  const d=new Date(yr,mo,1);
+  while(d.getMonth()===mo){
+    const m2=new Date(d); m2.setDate(m2.getDate()-((m2.getDay()+6)%7));
+    weeks.add(m2.toISOString().slice(0,10));
+    d.setDate(d.getDate()+7);
   }
-  renderB("b1-week",[0,1,2]); renderB("b2-week",[3,4]);
-  let h="";
-  DB.users.forEach(u=>{ const c=countUser(u.name,wk,[0,1,2,3,4]);
-    h+=`<div class="person-row"><span class="person-name">${u.name}</span><span class="person-sub">${c.o}× ontbijt &nbsp;${c.l}× lunch</span><span class="badge badge-green">${fmt(c.o*DB.priceOnt+c.l*DB.priceLun)}</span></div>`; });
-  document.getElementById("all-week").innerHTML=h;
+  return[...weeks];
 }
 
-// ── INKOOPTOOL ────────────────────────────────────────────
-function switchInkoopTab(n, el) {
-  inkoopActiveB = n;
-  document.querySelectorAll(".btab").forEach(t=>t.classList.remove("active"));
-  el.classList.add("active");
-  document.getElementById("inkoop-b1").style.display = n===1?"block":"none";
-  document.getElementById("inkoop-b2").style.display = n===2?"block":"none";
-}
-
-function renderInkoop() {
-  const wk = getWeekKey(weekOffset);
-  document.getElementById("inkoop-lbl").textContent = getWeekLabel(weekOffset);
-  renderInkoopB("inkoop-b1", wk, [0,1,2]);
-  renderInkoopB("inkoop-b2", wk, [3,4]);
-}
-
-function renderInkoopB(elId, wk, idxs) {
-  const s = bStats(wk, idxs);
-  const p = Math.max(s.maxOnt||s.o, s.maxLun||s.l) || Math.max(
-    Math.max(...idxs.map(i => { let c=0; DB.users.forEach(u=>{ if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(u.name,wk,DAYS[i],"Ontbijt"))c++; }); return c; })),
-    Math.max(...idxs.map(i => { let c=0; DB.users.forEach(u=>{ if(!isClosed(wk,i,"Lunch")&&!isAbsent(u.name,wk,DAYS[i],"Lunch"))c++; }); return c; }))
-  );
-  const maxOnt = Math.max(...idxs.map(i => { let c=0; DB.users.forEach(u=>{ if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(u.name,wk,DAYS[i],"Ontbijt"))c++; }); return c; }));
-  const maxLun = Math.max(...idxs.map(i => { let c=0; DB.users.forEach(u=>{ if(!isClosed(wk,i,"Lunch")&&!isAbsent(u.name,wk,DAYS[i],"Lunch"))c++; }); return c; }));
-  const sumOnt = s.o, sumLun = s.l;
-
-  if (maxOnt===0 && maxLun===0) { document.getElementById(elId).innerHTML='<div class="empty-state">Geen aanmeldingen voor deze periode.</div>'; return; }
-
-  const broodOnt = Math.ceil(maxOnt*3/12);
-  const broodLun = Math.ceil(maxLun*3/12);
-  const v = sumOnt + sumLun;
-  const kaasG = v*60;
-
-  const cats = {
-    'Brood & crackers': [
-      {name:'Vloerbrood (mix)', qty:Math.max(2,broodOnt+broodLun), unit:'stuks', note:'~3 sneetjes pp'},
-      {name:'Mini broodjes', qty:Math.max(1,Math.ceil(maxLun*2/15)), unit:'pakken (15st)'},
-      {name:'Knäckebröd volkoren', qty:Math.max(1,Math.ceil((maxLun*1.3)/5)), unit:'pakken', note:'incl. snackgebruik'},
-      {name:'Knäckebröd sesam', qty:Math.max(1,Math.ceil((maxLun*1.3)/6)), unit:'pakken', note:'incl. snackgebruik'},
-    ],
-    'Zuivel & kaas': [
-      {name:'Kaas jong belegen', qty:(kaasG*0.55/1000).toFixed(1), unit:'kg', note:'~60g pp/maaltijd'},
-      {name:'Kaas belegen 48+', qty:(kaasG*0.45/1000).toFixed(1), unit:'kg'},
-      {name:'Hüttenkäse (200g)', qty:Math.max(1,Math.ceil(maxOnt/2)), unit:'bakjes', note:'1 per 2p'},
-      {name:'Smeerkaas (200g)', qty:Math.max(1,Math.ceil(maxLun/3)), unit:'bakjes', note:'1 per 3p'},
-      {name:'Philadelphia (200g)', qty:Math.max(1,Math.ceil(maxLun/2)), unit:'bakjes', note:'1 per 2p'},
-      {name:'Griekse yoghurt 2%', qty:Math.max(1,Math.ceil(sumOnt*200*0.4/1000)), unit:'kg', note:'~200g pp'},
-      {name:'Griekse yoghurt 10%', qty:Math.max(1,Math.ceil(sumOnt*200*0.6/1000)), unit:'kg'},
-    ],
-    'Vleeswaren & vis': [
-      {name:'Kipfilet (200g)', qty:Math.max(1,Math.ceil(v*100*0.30/200)), unit:'pakken', note:'~100g pp'},
-      {name:'Achterham (250g)', qty:Math.max(1,Math.ceil(v*100*0.25/250)), unit:'pakken'},
-      {name:'Rosbief (100g)', qty:Math.max(1,Math.ceil(v*100*0.20/100)), unit:'pakken'},
-      {name:'Kipgrillworst (135g)', qty:Math.max(1,Math.ceil(v*100*0.15/135)), unit:'pakken'},
-      {name:'Gerookte zalm (200g)', qty:Math.max(1,Math.ceil(sumLun*100*0.25/200)), unit:'pakken'},
-    ],
-    'Vers & groente': [
-      {name:"Baby avocado's (4st)", qty:Math.max(1,Math.ceil(maxLun*0.5/4)), unit:'pakken'},
-      {name:'Rucola', qty:Math.max(1,Math.ceil(maxLun/4)), unit:'zakken'},
-      {name:'Cherrytomaatjes', qty:Math.max(1,Math.ceil(maxLun/4)), unit:'bakjes'},
-      {name:'Komkommer', qty:Math.max(1,Math.ceil(maxLun/5)), unit:'stuks'},
-    ],
-    'Dips & snacks': [
-      {name:'Hummus naturel (350g)', qty:Math.max(1,Math.ceil(maxLun/4)), unit:'bakjes'},
-      {name:'Hummus spicy mango', qty:Math.max(1,Math.ceil(maxLun/4)), unit:'bakjes'},
-      {name:'Olijven', qty:Math.max(1,Math.ceil(maxLun/6)), unit:'bakjes'},
-      {name:'Notenmix', qty:Math.max(1,Math.ceil(Math.max(maxOnt,maxLun)/5)), unit:'zakken'},
-    ],
-    'Lunch extra': [
-      {name:'Scharreleieren', qty:Math.max(1,Math.ceil(sumLun*2/12)), unit:'dozijn', note:'min. 2 pp'},
-      {name:'Tomatensoep (1L)', qty:Math.max(1,Math.ceil(maxLun/4)), unit:'liter', note:'4 porties/L'},
-      {name:'Courgette-zalmsoep (500ml)', qty:Math.max(1,Math.ceil(maxLun/5)), unit:'pakken'},
-    ],
-    'Ontbijt extra': [
-      {name:'Granola (mix)', qty:Math.max(1,Math.ceil(sumOnt/12)), unit:'pakken'},
-      {name:'Diepvriesfruit (500g)', qty:Math.max(1,Math.ceil(sumOnt*80/500)), unit:'zakken', note:'~80g pp'},
-      {name:'Bloemenhoning', qty:Math.max(1,Math.ceil(sumOnt/20)), unit:'flesjes'},
-    ],
-  };
-
-  const statsHtml = `<div class="stat-grid" style="margin-bottom:14px">
-    <div class="stat"><div class="stat-label">Max ontbijters/dag</div><div class="stat-val">${maxOnt}</div></div>
-    <div class="stat"><div class="stat-label">Max lunchers/dag</div><div class="stat-val">${maxLun}</div></div>
-    <div class="stat"><div class="stat-label">Totaal ontbijten</div><div class="stat-val">${sumOnt}</div></div>
-    <div class="stat"><div class="stat-label">Totaal lunches</div><div class="stat-val">${sumLun}</div></div>
-  </div>`;
-
-  const itemsHtml = Object.entries(cats).map(([cat, items]) => `
-    <div class="inkoop-section">
-      <div class="inkoop-section-title">${cat}</div>
-      <div class="inkoop-grid">
-        ${items.map(i=>`<div class="inkoop-item">
-          <span class="inkoop-name">${i.name}${i.note?`<br><span class="inkoop-note">${i.note}</span>`:''}</span>
-          <span class="inkoop-qty">${i.qty} ${i.unit}</span>
-        </div>`).join('')}
-      </div>
-    </div>`).join('');
-
-  document.getElementById(elId).innerHTML = statsHtml + itemsHtml;
-}
-
-// ── MANDJE ────────────────────────────────────────────────
-function getMandje(off) { const wk=getWeekKey(off); if(!mandjeCache[wk])mandjeCache[wk]={b1:[],b2:[]}; return mandjeCache[wk]; }
-function getPrevPrice(off,b,name) { const prev=(mandjeCache[getWeekKey(off-1)]||{b1:[],b2:[]})[b===1?"b1":"b2"]||[]; const f=prev.find(i=>i.name===name); return f?f.prijs:null; }
-function addItem(b) { getMandje(weekOffset)[b===1?"b1":"b2"].push({name:"",prijs:0,cat:"Ontbijt"}); renderMandjeItems(); }
-function addHunterDefaults(b) { const a=getMandje(weekOffset)[b===1?"b1":"b2"]; HUNTER_DEFAULTS.forEach(n=>{if(!a.find(i=>i.name===n))a.push({name:n,prijs:0,cat:"Hunter"});}); renderMandjeItems(); }
-function loadVasteProducten(b) { const a=getMandje(weekOffset)[b===1?"b1":"b2"]; vasteProducten.filter(p=>p.bestelling===b||p.bestelling===0).forEach(p=>{if(!a.find(i=>i.name===p.naam))a.push({name:p.naam,prijs:0,cat:p.categorie});}); renderMandjeItems(); }
-function removeItem(b,idx) { getMandje(weekOffset)[b===1?"b1":"b2"].splice(idx,1); renderMandjeItems(); }
-
-function updateItem(b,idx,field,val) {
-  const a=getMandje(weekOffset)[b===1?"b1":"b2"];
-  a[idx][field]=field==="prijs"?(parseFloat(val)||0):val;
-  if(field==="cat"&&a[idx].name) saveCatVoorkeur(a[idx].name,val);
-  updateTotals(b);
-}
-
-function updateTotals(b) {
-  const arr=getMandje(weekOffset)[b===1?"b1":"b2"];
-  const tot=mandjeTotal(arr,false),med=mandjeTotal(arr,true),hun=tot-med;
-  document.getElementById("b"+b+"-tot").textContent=fmt(tot);
-  document.getElementById("b"+b+"-med").textContent=fmt(med);
-  document.getElementById("b"+b+"-hun").textContent=fmt(hun);
-  document.getElementById("b"+b+"-badge").textContent=fmt(tot);
-}
-
-function getCatVoorkeuren() {
-  try{return JSON.parse(localStorage.getItem("hunter_cat_voorkeuren")||"{}");}catch(e){return {};}
-}
-function saveCatVoorkeur(naam,cat) {
-  const v=getCatVoorkeuren();v[naam.toLowerCase().trim()]=cat;
-  localStorage.setItem("hunter_cat_voorkeuren",JSON.stringify(v));
-}
-function getCatVoorNaam(naam) {
-  const v=getCatVoorkeuren();return v[(naam||"").toLowerCase().trim()]||null;
-}
-
-function mandjeTotal(items,medOnly) { return items.reduce((s,i)=>s+(medOnly&&i.cat==="Hunter"?0:i.prijs),0); }
-
-function renderMandjeItems() {
-  document.getElementById("mandje-lbl").textContent=getWeekLabel(weekOffset);
-  const m=getMandje(weekOffset);
-  [1,2].forEach(b=>{
-    const arr=b===1?m.b1:m.b2, el=document.getElementById("b"+b+"-items");
-    if(!arr.length){el.innerHTML='<div class="empty-state">Nog geen producten. Upload een screenshot of klik + Product.</div>';return;}
-    el.innerHTML=arr.map((item,i)=>{
-      const prev=getPrevPrice(weekOffset,b,item.name);
-      let db="";
-      if(prev!==null&&item.prijs>0){const d=item.prijs-prev;if(Math.abs(d)>0.005)db=d>0?`<span class="diff-badge badge-up">▲${fmt(d)}</span>`:`<span class="diff-badge badge-down">▼${fmt(Math.abs(d))}</span>`;else db=`<span class="diff-badge badge-same">=</span>`;}
-      else if(prev===null&&item.name)db=`<span class="diff-badge badge-same">nieuw</span>`;
-      return `<div class="mandje-row">
-        <input type="text" value="${item.name.replace(/"/g,'&quot;')}" placeholder="Product..." oninput="updateItem(${b},${i},'name',this.value)">
-        <input type="number" step="0.01" min="0" value="${item.prijs||''}" placeholder="0.00" oninput="updateItem(${b},${i},'prijs',this.value)">
-        <select onchange="updateItem(${b},${i},'cat',this.value)">
-          <option value="Ontbijt" ${item.cat==="Ontbijt"?"selected":""}>🌅 Ontbijt</option>
-          <option value="Lunch" ${item.cat==="Lunch"?"selected":""}>🥗 Lunch</option>
-          <option value="Beide" ${item.cat==="Beide"?"selected":""}>🍽️ Beide</option>
-          <option value="Hunter" ${item.cat==="Hunter"?"selected":""}>🏢 Hunter</option>
-        </select>
-        <div>${db}</div>
-        <button class="del-btn" onclick="removeItem(${b},${i})">✕</button>
-      </div>`;
-    }).join('');
-    const tot=mandjeTotal(arr,false),med=mandjeTotal(arr,true),hun=tot-med;
-    document.getElementById("b"+b+"-tot").textContent=fmt(tot);
-    document.getElementById("b"+b+"-med").textContent=fmt(med);
-    document.getElementById("b"+b+"-hun").textContent=fmt(hun);
-    document.getElementById("b"+b+"-badge").textContent=fmt(tot);
-  });
-}
-
-async function initMandje() {
-  document.getElementById("mandje-lbl").textContent=getWeekLabel(weekOffset);
-  await loadMandjeFromDB();
-  renderMandjeItems();
-}
-
-async function saveMandjeAndCalc() {
-  const wk=getWeekKey(weekOffset),m=getMandje(weekOffset);
-  showLoading("Mandje opslaan...");
-  try {
-    await sb(`/mandje_items?week_key=eq.${wk}`,{method:"DELETE",prefer:"return=minimal",headers:{"Prefer":"return=minimal"}});
-    const all=[...m.b1.filter(i=>i.name).map(i=>({week_key:wk,bestelling:1,naam:i.name,prijs:i.prijs,categorie:i.cat})),
-               ...m.b2.filter(i=>i.name).map(i=>({week_key:wk,bestelling:2,naam:i.name,prijs:i.prijs,categorie:i.cat}))];
-    if(all.length>0) await sb("/mandje_items",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify(all)});
-    hideLoading(); renderVerrekening(); switchTab('verrekening',document.getElementById('tab-verrekening'));
-  } catch(e){hideLoading();alert("Fout bij opslaan: "+e.message);}
-}
-
-async function loadMandjeFromDB() {
-  const wk=getWeekKey(weekOffset),prevWk=getWeekKey(weekOffset-1);
-  try {
-    const [items,prev]=await Promise.all([
-      sb(`/mandje_items?week_key=eq.${wk}&select=bestelling,naam,prijs,categorie`),
-      sb(`/mandje_items?week_key=eq.${prevWk}&select=bestelling,naam,prijs,categorie`)
-    ]);
-    if(items.length>0) mandjeCache[wk]={b1:items.filter(i=>i.bestelling===1).map(i=>({name:i.naam,prijs:parseFloat(i.prijs),cat:i.categorie})),b2:items.filter(i=>i.bestelling===2).map(i=>({name:i.naam,prijs:parseFloat(i.prijs),cat:i.categorie}))};
-    if(prev.length>0) mandjeCache[prevWk]={b1:prev.filter(i=>i.bestelling===1).map(i=>({name:i.naam,prijs:parseFloat(i.prijs),cat:i.categorie})),b2:prev.filter(i=>i.bestelling===2).map(i=>({name:i.naam,prijs:parseFloat(i.prijs),cat:i.categorie}))};
-  } catch(e){console.warn("Mandje laden:",e.message);}
-}
-
-// ── VERREKENING ───────────────────────────────────────────
-function renderVerrekening() {
-  const wk=getWeekKey(weekOffset);
-  document.getElementById("verr-lbl").textContent=getWeekLabel(weekOffset);
-  const m=getMandje(weekOffset);
-  const b1s=bStats(wk,[0,1,2]),b2s=bStats(wk,[3,4]);
-  function splitCosts(items,stats) {
-    let tO=0,tL=0;
-    items.forEach(i=>{if(i.cat==="Hunter")return;if(i.cat==="Ontbijt")tO+=i.prijs;else if(i.cat==="Lunch")tL+=i.prijs;else if(i.cat==="Beide"){tO+=i.prijs*0.3;tL+=i.prijs*0.7;}});
-    return {ppOnt:stats.o>0?tO/stats.o:DB.priceOnt,ppLun:stats.l>0?tL/stats.l:DB.priceLun};
-  }
-  const c1=splitCosts(m.b1,b1s),c2=splitCosts(m.b2,b2s);
-  const totMed=mandjeTotal(m.b1,true)+mandjeTotal(m.b2,true);
-  const totHun=(mandjeTotal(m.b1,false)-mandjeTotal(m.b1,true))+(mandjeTotal(m.b2,false)-mandjeTotal(m.b2,true));
-  const totMandje=mandjeTotal(m.b1,false)+mandjeTotal(m.b2,false);
-  document.getElementById("verr-stats").innerHTML=`
-    <div class="stat"><div class="stat-label">Totaal mandje</div><div class="stat-val">${fmt(totMandje)}</div></div>
-    <div class="stat"><div class="stat-label">Medewerkersdeel</div><div class="stat-val">${fmt(totMed)}</div></div>
-    <div class="stat"><div class="stat-label">Hunter deel</div><div class="stat-val">${fmt(totHun)}</div></div>
-    <div class="stat"><div class="stat-label">Ontbijt pp (gem)</div><div class="stat-val">${fmt((c1.ppOnt+c2.ppOnt)/2)}</div></div>
-    <div class="stat"><div class="stat-label">Lunch pp (gem)</div><div class="stat-val">${fmt((c1.ppLun+c2.ppLun)/2)}</div></div>`;
-  const rows=DB.users.map(u=>{
-    const u1=countUser(u.name,wk,[0,1,2]),u2=countUser(u.name,wk,[3,4]);
-    const kO=u1.o*c1.ppOnt+u2.o*c2.ppOnt,kL=u1.l*c1.ppLun+u2.l*c2.ppLun;
-    return {name:u.name,o:u1.o+u2.o,l:u1.l+u2.l,kO,kL,tot:kO+kL};
-  });
-  const grand=rows.reduce((s,r)=>s+r.tot,0);
-  document.getElementById("verr-tbody").innerHTML=rows.map(r=>`<tr><td>${r.name}</td><td>${r.o}×</td><td>${r.l}×</td><td>${fmt(r.kO)}</td><td>${fmt(r.kL)}</td><td><strong>${fmt(r.tot)}</strong></td></tr>`).join('')+`<tr class="total-row"><td colspan="5">Totaal</td><td>${fmt(grand)}</td></tr>`;
-  verrRows=rows;
-  document.getElementById("wa-preview").style.display="none";
-}
-
-function exportVerrekening() {
-  if(!verrRows)return;
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([["Hunter Recruitment — Weekverrekening"],["Week",getWeekLabel(weekOffset)],[],["Naam","Ontbijten","Lunches","Ontbijt €","Lunch €","Totaal €"],...verrRows.map(r=>[r.name,r.o,r.l,r.kO.toFixed(2),r.kL.toFixed(2),r.tot.toFixed(2)])]);
-  ws["!cols"]=[{wch:22},{wch:10},{wch:10},{wch:12},{wch:12},{wch:12}];
-  XLSX.utils.book_append_sheet(wb,ws,"Verrekening");
-  XLSX.writeFile(wb,`verrekening_${getWeekKey(weekOffset)}.xlsx`);
-}
-
-function copyWhatsApp() {
-  if(!verrRows)return;
-  let msg=`🥗 *Hunter Lunch & Ontbijt — ${getWeekLabel(weekOffset)}*\n\n`;
-  verrRows.forEach(r=>{if(r.tot>0)msg+=`${r.name}: ${r.o}× ontbijt, ${r.l}× lunch → *${fmt(r.tot)}*\n`;});
-  msg+=`\n*Totaal medewerkersdeel: ${fmt(verrRows.reduce((s,r)=>s+r.tot,0))}*`;
-  navigator.clipboard.writeText(msg).catch(()=>{}).then(()=>{
-    document.getElementById("wa-text").textContent=msg;
-    document.getElementById("wa-preview").style.display="block";
-  });
-}
-
-// ── MAAND ─────────────────────────────────────────────────
-function getWeeksInMonth(yr,mo){const w=new Set(),d=new Date(yr,mo,1);while(d.getMonth()===mo){const m2=new Date(d);m2.setDate(m2.getDate()-((m2.getDay()+6)%7));w.add(m2.toISOString().slice(0,10));d.setDate(d.getDate()+7);}return[...w];}
-function renderMaand() {
-  const mo=parseInt(document.getElementById("sel-mo").value),yr=parseInt(document.getElementById("sel-yr").value);
-  const rows=DB.users.map(u=>{
-    let o=0,l=0;
-    getWeeksInMonth(yr,mo).forEach(wk=>{DAYS.forEach((day,i)=>{const dt=new Date(getDayKey(wk,i));if(dt.getFullYear()===yr&&dt.getMonth()===mo){if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(u.name,wk,day,"Ontbijt"))o++;if(!isClosed(wk,i,"Lunch")&&!isAbsent(u.name,wk,day,"Lunch"))l++;}});});
-    return {name:u.name,o,l,tot:o*DB.priceOnt+l*DB.priceLun};
-  });
-  const grand=rows.reduce((s,r)=>s+r.tot,0);
-  document.getElementById("maand-content").innerHTML=`<table class="tbl"><thead><tr><th>Naam</th><th>Ontbijten</th><th>Lunches</th><th>In te houden</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.name}</td><td>${r.o}×</td><td>${r.l}×</td><td><strong>${fmt(r.tot)}</strong></td></tr>`).join('')}<tr class="total-row"><td colspan="3">Totaal</td><td>${fmt(grand)}</td></tr></tbody></table><p class="hint" style="margin-top:10px">Tarieven: ontbijt ${fmt(DB.priceOnt)} · lunch ${fmt(DB.priceLun)} p.p.</p>`;
-  document.getElementById("maand-btns").style.display="flex";
-  window._maandData={rows,mo,yr};
-}
-function exportMaand() {
-  if(!window._maandData)return;
-  const{rows,mo,yr}=window._maandData;
-  const wb=XLSX.utils.book_new();
-  const ws=XLSX.utils.aoa_to_sheet([["Hunter Recruitment — "+MONTHS_NL[mo]+" "+yr],[],["Naam","Ontbijten","Lunches","In te houden (€)"],...rows.map(r=>[r.name,r.o,r.l,r.tot.toFixed(2)]),["","","Totaal",rows.reduce((s,r)=>s+r.tot,0).toFixed(2)]]);
-  ws["!cols"]=[{wch:22},{wch:12},{wch:10},{wch:16}];
-  XLSX.utils.book_append_sheet(wb,ws,"Overzicht");
-  XLSX.writeFile(wb,`hunter_maand_${MONTHS_NL[mo]}_${yr}.xlsx`);
-}
-
-// ── INSTELLINGEN ──────────────────────────────────────────
-function renderInstellingen() {
-  document.getElementById("set-ont").textContent=fmt(DB.priceOnt);
-  document.getElementById("set-lun").textContent=fmt(DB.priceLun);
-  renderVasteProducten();
-}
-function renderVasteProducten() {
-  const el=document.getElementById("vaste-list");
-  if(!vasteProducten.length){el.innerHTML='<div class="empty-state">Nog geen vaste producten.</div>';return;}
-  el.innerHTML=vasteProducten.map((p,i)=>`<div class="person-row"><span class="person-name">${p.naam}</span><span class="badge badge-blue">${p.categorie}</span><span class="person-sub">Best.${p.bestelling===0?"1+2":p.bestelling}</span><button class="del-btn" onclick="removeVastProduct(${i})">✕</button></div>`).join('');
-}
-async function addVastProduct() {
-  const naam=document.getElementById("vast-naam").value.trim(),cat=document.getElementById("vast-cat").value,best=parseInt(document.getElementById("vast-best").value);
-  if(!naam)return;
-  try{await sb("/vaste_producten",{method:"POST",headers:{"Prefer":"return=minimal"},body:JSON.stringify({naam,categorie:cat,bestelling:best})});vasteProducten.push({naam,categorie:cat,bestelling:best});document.getElementById("vast-naam").value="";renderVasteProducten();}catch(e){alert("Fout: "+e.message);}
-}
-async function removeVastProduct(i) {
-  const p=vasteProducten[i];
-  try{await sb(`/vaste_producten?naam=eq.${encodeURIComponent(p.naam)}&bestelling=eq.${p.bestelling}`,{method:"DELETE",headers:{"Prefer":"return=minimal"}});vasteProducten.splice(i,1);renderVasteProducten();}catch(e){alert("Fout: "+e.message);}
-}
-
-// ── API KEY ───────────────────────────────────────────────
-function getApiKey(){return localStorage.getItem("hunter_api_key")||"";}
-function saveApiKey(){
-  const k=document.getElementById("api-key-input").value.trim();
-  if(!k.startsWith("sk-ant")){alert("Dit lijkt geen geldige Anthropic API key (moet beginnen met sk-ant).");return;}
-  localStorage.setItem("hunter_api_key",k);
-  closeModal("modal-api");
-  updateApiStatus();
-}
-function updateApiStatus(){
-  const el=document.getElementById("api-status");
-  if(getApiKey()){el.textContent="✓ API key ingesteld";el.className="api-status api-ok";}
-  else{el.textContent="⚠ API key instellen";el.className="api-status api-missing";}
-}
-function closeModal(id){document.getElementById(id).style.display="none";}
-
-// ── SCREENSHOT ────────────────────────────────────────────
-function handleDrop(e,b){e.preventDefault();document.getElementById("upload-zone-"+b).classList.remove("drag");Array.from(e.dataTransfer.files).filter(f=>f.type.startsWith("image/")).forEach(f=>processImage(f,b));}
-function handleFileUpload(e,b){const files=Array.from(e.target.files);files.forEach(f=>processImage(f,b));e.target.value="";}
-
-async function processImage(file, b) {
-  const apiKey=getApiKey();
-  const statusEl=document.getElementById("ai-status-"+b);
-  if(!apiKey){statusEl.innerHTML='<div class="ai-result">⚠ Stel eerst je Claude API key in (rechtsboven).</div>';return;}
-  statusEl.innerHTML='<div class="ai-loading"><div class="spinner"></div> Screenshot uitlezen met Claude... even geduld</div>';
-  const base64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(file);});
-  try {
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json","x-api-key":apiKey,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-      body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:2000,messages:[{role:"user",content:[
-        {type:"image",source:{type:"base64",media_type:file.type,data:base64}},
-        {type:"text",text:`Dit is een screenshot van een Picnic boodschappenmandje. Jouw taak: lees ELKE productregel uit en geef ze terug als JSON array in EXACT DEZELFDE VOLGORDE als op de screenshot.
-
-BELANGRIJK: neem ALLE producten mee, sla er geen over.
-
-Formaat per product: {"naam": "exacte productnaam zoals op screenshot", "prijs": 0.00, "categorie": "..."}
-
-Prijs bepalen:
-- Gebruik het getal RECHTS op elke productregel — dat is de totaalprijs voor die regel
-- Als er een aantal staat (bijv. "3" links) dan is de prijs al het totaal (aantal × stuksprijs)
-- Bij BundelBonus: gebruik de rode/gekleurde kortingsprijs, NIET de doorgestreepte originele prijs
-- Prijzen staan in euro's met komma of punt als decimaalteken
-
-Categorie bepalen:
-- "Ontbijt": brood, vloerbrood, beleg, kaas, vleeswaren, eieren, yoghurt, skyr, granola, muesli, fruit, diepvriesfruit, boter, jam, pindakaas, hagelslag, honing, kwark
-- "Lunch": soep, zalm, avocado, rucola, tomaten, komkommer, hummus, mini broodjes, Philadelphia, smeerkaas, hüttenkäse, wraps, salade
-- "Beide": knäckebröd, crackers (worden ook als snack gegeten)
-- "Hunter": melk, cola, fris, water, vuilniszakken, chips, noten, borrelhapjes, alcohol, bier, wijn, schoonmaak, huishoudproducten, peper, zout, koffie, thee
-
-Geef ALLEEN de JSON array terug, geen tekst of uitleg eromheen. Begin direct met [.`}
-      ]}]})
-    });
-    if(!resp.ok) {
-      const errText = await resp.text();
-      throw new Error("API fout ("+resp.status+"): " + errText.slice(0,200));
-    }
-    const data=await resp.json();
-    if(data.error){throw new Error(data.error.message);}
-    const text=data.content?.[0]?.text||"";
-    if(!text) throw new Error("Claude gaf een leeg antwoord terug. Probeer opnieuw.");
-    let items;
-    // Robustly extract JSON array from response
-    try {
-      // First try direct parse after stripping markdown
-      let clean = text.replace(/```json|```/g,"").trim();
-      // Try to find a JSON array anywhere in the response
-      const match = clean.match(/\[[\s\S]*\]/);
-      if (match) clean = match[0];
-      items = JSON.parse(clean);
-    } catch(e) {
-      // Last resort: show the raw response for debugging
-      throw new Error("Kon resultaat niet parsen. Claude antwoordde: " + text.slice(0,300));
-    }
-    const m=getMandje(weekOffset),arr=b===1?m.b1:m.b2;
-    let added=0;
-    items.forEach(item=>{
-      if(item.naam){
-        const voorkeur=getCatVoorNaam(item.naam);
-        const cat=voorkeur||(item.categorie||"Ontbijt");
-        const existing=arr.find(i=>i.name===item.naam);
-        if(existing){existing.prijs=parseFloat(item.prijs)||0;existing.cat=cat;}
-        else{arr.push({name:item.naam,prijs:parseFloat(item.prijs)||0,cat:cat});added++;}
+function monthSummary(user,yr,mo){
+  let o=0,l=0,rows=[];
+  getWeeksInMonth(yr,mo).forEach(wk=>{
+    DAYS.forEach((day,i)=>{
+      const dk=getDayKey(wk,i);
+      const dt=new Date(dk);
+      if(dt.getFullYear()===yr&&dt.getMonth()===mo){
+        const oc=!isClosed(wk,i,"Ontbijt")&&!isAbsent(user,wk,day,"Ontbijt");
+        const lc=!isClosed(wk,i,"Lunch")&&!isAbsent(user,wk,day,"Lunch");
+        rows.push({datum:dt.toLocaleDateString("nl-NL"),dag:day,ontbijt:oc,lunch:lc});
+        if(oc)o++; if(lc)l++;
       }
     });
-    renderMandjeItems();
-    statusEl.innerHTML=`<div class="ai-result">✓ ${items.length} producten uitgelezen — ${added} nieuw toegevoegd aan bestelling ${b}. Controleer categorieën en pas aan waar nodig.</div>`;
-  } catch(e){statusEl.innerHTML=`<div class="ai-result" style="color:var(--warn)">✕ Fout: ${e.message}</div>`;}
+  });
+  return{o,l,rows,total:(o*DATA.prices.Ontbijt+l*DATA.prices.Lunch).toFixed(2)};
 }
 
-// ── TABS ──────────────────────────────────────────────────
-function switchTab(name,el){
-  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.getElementById("sec-"+name).classList.add("active");
-  if(el)el.classList.add("active");
-  if(name==="week")renderWeek();
-  if(name==="inkoop")renderInkoop();
-  if(name==="mandje")initMandje();
-  if(name==="verrekening")renderVerrekening();
-  if(name==="instellingen")renderInstellingen();
+// ── EXPORTS ───────────────────────────────────────────────
+function exportOne(user,yr,mo){
+  const s=monthSummary(user,yr,mo);
+  const wb=XLSX.utils.book_new();
+  const aoa=[
+    ["Hunter Recruitment — Lunch & Ontbijt"],[""],
+    ["Medewerker",user],["Maand",MONTHS[mo]+" "+yr],
+    ["Prijs ontbijt","€"+DATA.prices.Ontbijt.toFixed(2)],
+    ["Prijs lunch","€"+DATA.prices.Lunch.toFixed(2)],[""],
+    ["Datum","Dag","Ontbijt","Lunch"],
+    ...s.rows.map(r=>[r.datum,r.dag,r.ontbijt?"Ja":"Nee",r.lunch?"Ja":"Nee"]),
+    [""],["Totaal ontbijten",s.o],["Totaal lunches",s.l],
+    ["In te houden","€"+s.total]
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"]=[{wch:16},{wch:12},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,"Overzicht");
+  XLSX.writeFile(wb,`lunch_${user}_${MONTHS[mo]}_${yr}.xlsx`);
 }
-function showLoading(msg){document.getElementById("loading-msg").textContent=msg||"Laden...";document.getElementById("loading").style.display="flex";}
-function hideLoading(){document.getElementById("loading").style.display="none";}
-async function refreshAll(){showLoading("Data verversen...");await loadAll();hideLoading();renderWeek();}
 
-// ── INIT ──────────────────────────────────────────────────
-async function loadAll() {
-  const [users,absences,settings,closed,vaste]=await Promise.all([
-    sb("/users?select=name&order=name"),
-    sb("/absences?select=user_name,week_key,day,meal,absent"),
-    sb("/settings?select=key,value"),
-    sb("/closed_days?select=day_key,meal,closed"),
-    sb("/vaste_producten?select=naam,categorie,bestelling").catch(()=>[])
-  ]);
-  DB.users=users; DB.absences=absences; DB.closedDays=closed;
-  settings.forEach(s=>{if(s.key==="price_ontbijt")DB.priceOnt=parseFloat(s.value);if(s.key==="price_lunch")DB.priceLun=parseFloat(s.value);});
-  vasteProducten=vaste;
-  const now=new Date(),sm=document.getElementById("sel-mo"),sy=document.getElementById("sel-yr");
-  if(sm.options.length===0){
-    MONTHS_NL.forEach((m,i)=>{const o=document.createElement("option");o.value=i;o.textContent=m;if(i===now.getMonth())o.selected=true;sm.appendChild(o);});
-    [now.getFullYear()-1,now.getFullYear(),now.getFullYear()+1].forEach(y=>{const o=document.createElement("option");o.value=y;o.textContent=y;if(y===now.getFullYear())o.selected=true;sy.appendChild(o);});
+function exportAll(yr,mo){
+  const wb=XLSX.utils.book_new();
+  // Summary sheet
+  const sum=[
+    ["Hunter Recruitment — Maandoverzicht "+MONTHS[mo]+" "+yr],[""],
+    ["Naam","Ontbijten","Lunches","In te houden (€)"],
+    ...DATA.users.map(u=>{const s=monthSummary(u.name,yr,mo);return[u.name,s.o,s.l,s.total];}),
+    [""],["Prijs ontbijt","€"+DATA.prices.Ontbijt.toFixed(2)],["Prijs lunch","€"+DATA.prices.Lunch.toFixed(2)]
+  ];
+  const ws0=XLSX.utils.aoa_to_sheet(sum);
+  ws0["!cols"]=[{wch:16},{wch:12},{wch:10},{wch:16}];
+  XLSX.utils.book_append_sheet(wb,ws0,"Overzicht");
+  // Per person
+  DATA.users.forEach(u=>{
+    const s=monthSummary(u.name,yr,mo);
+    const aoa=[
+      [u.name],["Maand",MONTHS[mo]+" "+yr],[""],
+      ["Datum","Dag","Ontbijt","Lunch"],
+      ...s.rows.map(r=>[r.datum,r.dag,r.ontbijt?"Ja":"Nee",r.lunch?"Ja":"Nee"]),
+      [""],["Totaal ontbijten",s.o],["Totaal lunches",s.l],["In te houden","€"+s.total]
+    ];
+    const ws=XLSX.utils.aoa_to_sheet(aoa);
+    ws["!cols"]=[{wch:14},{wch:12},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws,u.name.slice(0,31));
+  });
+  XLSX.writeFile(wb,`hunter_lunch_${MONTHS[mo]}_${yr}.xlsx`);
+}
+
+// ── AUTH ──────────────────────────────────────────────────
+function doLogin(){
+  const name=document.getElementById("sel").value;
+  const pw=document.getElementById("pw").value;
+  const err=document.getElementById("err");
+  if(name==="__admin__"&&pw==="admin123"){
+    UI.loggedIn={name:"Admin",isAdmin:true};
+    err.classList.remove("show"); showApp(); return;
+  }
+  const u=DATA.users.find(u=>u.name===name&&u.password===pw);
+  if(u){UI.loggedIn=u; err.classList.remove("show"); showApp();}
+  else err.classList.add("show");
+}
+function doLogout(){
+  UI.loggedIn=null;
+  document.getElementById("app-screen").style.display="none";
+  document.getElementById("login-screen").style.display="block";
+  document.getElementById("header-user").style.display="none";
+  document.getElementById("pw").value="";
+}
+function showApp(){
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app-screen").style.display="block";
+  // Set avatar
+  const name=UI.loggedIn.name;
+  const av=document.getElementById("av");
+  const un=document.getElementById("un");
+  av.textContent=name.slice(0,2).toUpperCase();
+  if(UI.loggedIn.isAdmin) av.classList.add("admin");
+  un.textContent=name;
+  document.getElementById("user-view").style.display=UI.loggedIn.isAdmin?"none":"block";
+  document.getElementById("admin-view").style.display=UI.loggedIn.isAdmin?"block":"none";
+  render();
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function render(){
+  if(!UI.loggedIn) return;
+  if(UI.loggedIn.isAdmin) renderAdmin();
+  else renderUser();
+}
+
+function renderUser(){
+  const wk=getWeekKey(UI.weekOffset);
+  const user=UI.loggedIn.name;
+  document.getElementById("u-week-label").textContent=getWeekLabel(UI.weekOffset);
+
+  // Deadline banner
+  const dl = getDeadlineInfo();
+  let dlBanner = document.getElementById("u-deadline-banner");
+  if (!dlBanner) {
+    dlBanner = document.createElement("div");
+    dlBanner.id = "u-deadline-banner";
+    const uv = document.getElementById("user-view");
+    uv.insertBefore(dlBanner, uv.firstChild);
+  }
+  dlBanner.className = "deadline-banner " + (dl.urgent ? "" : "ok");
+  dlBanner.textContent = "⏰ " + dl.label;
+
+  // Days
+  const dc=document.getElementById("u-days-card");
+  dc.innerHTML='<div class="section-label">Klik om aan/af te melden &nbsp;·&nbsp; Groen = aanwezig &nbsp;·&nbsp; Rood = afwezig</div>';
+  DAYS.forEach((day,i)=>{
+    const row=document.createElement("div");
+    row.className="day-row";
+    const dn=document.createElement("span");
+    dn.className="day-name"; dn.textContent=day;
+    row.appendChild(dn);
+    const pills=document.createElement("div");
+    pills.className="meal-pills";
+    MEALS.forEach(meal=>{
+      const pill=document.createElement("span");
+      pill.className="meal-pill";
+      if(isClosed(wk,i,meal)){
+        pill.classList.add("closed");
+        pill.textContent=meal+" gesloten";
+      } else {
+        const absent=isAbsent(user,wk,day,meal);
+        pill.classList.add(absent?"absent":"present");
+        pill.textContent=meal+(absent?" ✕":" ✓");
+        pill.onclick=()=>toggleAbsence(user,wk,day,meal);
+      }
+      pills.appendChild(pill);
+    });
+    row.appendChild(pills);
+    dc.appendChild(row);
+  });
+
+  // Stats this week
+  const{o,l}=countWeek(user,wk);
+  const cost=(o*DATA.prices.Ontbijt+l*DATA.prices.Lunch).toFixed(2);
+  document.getElementById("u-stats").innerHTML=`
+    <div class="stat-box"><div class="s-label">Ontbijten</div><div class="s-val">${o}</div></div>
+    <div class="stat-box"><div class="s-label">Lunches</div><div class="s-val">${l}</div></div>
+    <div class="stat-box"><div class="s-label">Kosten week</div><div class="s-val">€${cost}</div></div>`;
+
+  // Monthly summary
+  const now = new Date();
+  const ms = monthSummary(user, now.getFullYear(), now.getMonth());
+  let monthEl = document.getElementById("u-month-summary");
+  if (!monthEl) {
+    monthEl = document.createElement("div");
+    monthEl.id = "u-month-summary";
+    monthEl.className = "card";
+    monthEl.style.marginTop = "14px";
+    document.getElementById("user-view").appendChild(monthEl);
+  }
+  monthEl.innerHTML = `
+    <div class="section-label">Deze maand — ${MONTHS[now.getMonth()]} ${now.getFullYear()}</div>
+    <div class="stat-row" style="margin-bottom:10px">
+      <div class="stat-box"><div class="s-label">Ontbijten</div><div class="s-val">${ms.o}</div></div>
+      <div class="stat-box"><div class="s-label">Lunches</div><div class="s-val">${ms.l}</div></div>
+      <div class="stat-box"><div class="s-label">In te houden</div><div class="s-val">€${ms.total}</div></div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted)">Wordt aan het einde van de maand van je salaris afgeschreven.</p>`;
+
+  // Allergy field
+  let allergyEl = document.getElementById("u-allergy-section");
+  if (!allergyEl) {
+    allergyEl = document.createElement("div");
+    allergyEl.id = "u-allergy-section";
+    allergyEl.className = "card";
+    allergyEl.style.marginTop = "14px";
+    document.getElementById("user-view").appendChild(allergyEl);
+  }
+  const currentAllergy = DATA.allergies?.[user] || "";
+  allergyEl.innerHTML = `
+    <div class="section-label">Dieetwensen / allergieën</div>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px">Alleen zichtbaar voor jou en de beheerder.</p>
+    <input type="text" id="allergy-input" placeholder="bijv. lactose-intolerant, vegetarisch, notenallergie..."
+      value="${currentAllergy}"
+      style="width:100%;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);font-family:var(--font);font-size:0.88rem;background:rgba(255,255,255,0.8);"
+      oninput="DATA.allergies=DATA.allergies||{};DATA.allergies['${user}']=this.value;markPending()"/>`;
+}
+
+function switchTab(btn,tab){
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  ["week","sluiten","maand","mensen","instellingen"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display=t===tab?"block":"none";
+  });
+  UI.adminTab=tab;
+  renderAdminTab(tab);
+}
+
+function renderAdmin(){
+  renderAdminTab(UI.adminTab);
+}
+
+function renderAdminTab(tab){
+  if(tab==="week") renderTabWeek();
+  if(tab==="sluiten") renderTabSluiten();
+  if(tab==="maand") renderTabMaand();
+  if(tab==="mensen") renderTabMensen();
+  if(tab==="instellingen") renderTabInstellingen();
+}
+
+function countOrderBlock(users, wk, dayIndices) {
+  let to=0, tl=0;
+  users.forEach(u => {
+    dayIndices.forEach(i => {
+      if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(u.name,wk,DAYS[i],"Ontbijt")) to++;
+      if(!isClosed(wk,i,"Lunch")&&!isAbsent(u.name,wk,DAYS[i],"Lunch")) tl++;
+    });
+  });
+  return {to, tl};
+}
+
+function renderTabWeek(){
+  const wk=getWeekKey(UI.weekOffset);
+  const isCurrentOrNext = UI.weekOffset === 0 || UI.weekOffset === 1;
+  let to=0,tl=0;
+  DATA.users.forEach(u=>{const c=countWeek(u.name,wk);to+=c.o;tl+=c.l;});
+  const tc=(to*DATA.prices.Ontbijt+tl*DATA.prices.Lunch).toFixed(2);
+
+  // Deadline banner (only for upcoming weeks)
+  let deadlineBanner = "";
+  if (isCurrentOrNext) {
+    const dl = getDeadlineInfo();
+    deadlineBanner = `<div class="deadline-banner ${dl.urgent?"":"ok"}">⏰ ${dl.label} — beide bestellingen</div>`;
+  }
+
+  // Not filled banner (only next week)
+  let notFilledBanner = "";
+  if (UI.weekOffset === 1) {
+    const notFilled = getNotFilledUsers();
+    if (notFilled.length > 0) {
+      const names = notFilled.map(u=>u.name.split(" ")[0]).join(", ");
+      notFilledBanner = `<div class="not-filled-banner">
+        <strong>Nog niet ingevuld:</strong> ${names}
+        <br><button class="btn-export" style="margin-top:8px;padding:7px 14px;font-size:0.8rem;" onclick="sendWhatsAppReminder()">📱 Stuur WhatsApp reminder</button>
+      </div>`;
+    } else {
+      notFilledBanner = `<div class="deadline-banner ok">✓ Iedereen heeft ingevuld voor volgende week</div>`;
+    }
+  }
+
+  // Two order blocks
+  const b1 = countOrderBlock(DATA.users, wk, [0,1,2]); // ma/di/wo
+  const b2 = countOrderBlock(DATA.users, wk, [3,4]);    // do/vr
+  const c1 = (b1.to*DATA.prices.Ontbijt + b1.tl*DATA.prices.Lunch).toFixed(2);
+  const c2 = (b2.to*DATA.prices.Ontbijt + b2.tl*DATA.prices.Lunch).toFixed(2);
+
+  let html=`
+    <div class="week-nav">
+      <button class="nav-btn" onclick="UI.weekOffset--;renderAdmin()">&#8592;</button>
+      <span class="week-label">${getWeekLabel(UI.weekOffset)}</span>
+      <button class="nav-btn" onclick="UI.weekOffset++;renderAdmin()">&#8594;</button>
+    </div>
+    ${deadlineBanner}
+    ${notFilledBanner}
+    <div class="order-block">
+      <div class="order-block-title">Bestelling 1 — Ma / Di / Wo <span class="order-badge">€${c1}</span></div>
+      <div style="font-size:0.82rem;color:var(--muted)">${b1.to} ontbijten &nbsp;·&nbsp; ${b1.tl} lunches</div>
+    </div>
+    <div class="order-block">
+      <div class="order-block-title">Bestelling 2 — Do / Vr <span class="order-badge">€${c2}</span></div>
+      <div style="font-size:0.82rem;color:var(--muted)">${b2.to} ontbijten &nbsp;·&nbsp; ${b2.tl} lunches</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="s-label">Ontbijten</div><div class="s-val">${to}</div></div>
+      <div class="stat-box"><div class="s-label">Lunches</div><div class="s-val">${tl}</div></div>
+      <div class="stat-box"><div class="s-label">Totaal</div><div class="s-val">€${tc}</div></div>
+    </div>
+    <div class="card"><div class="section-label">Per medewerker</div>`;
+  DATA.users.forEach(u=>{
+    const{o,l}=countWeek(u.name,wk);
+    const c=(o*DATA.prices.Ontbijt+l*DATA.prices.Lunch).toFixed(2);
+    const allergy = DATA.allergies?.[u.name] ? `<span class="allergy-tag">⚠ ${DATA.allergies[u.name]}</span>` : "";
+    html+=`<div class="person-row" style="flex-wrap:wrap;">
+      <span class="person-name">${u.name}${allergy ? "<br>"+allergy : ""}</span>
+      <span class="person-sub">${o}× ontbijt &nbsp; ${l}× lunch</span>
+      <span class="person-cost">€${c}</span>
+    </div>`;
+  });
+  html+="</div>";
+  document.getElementById("tab-week").innerHTML=html;
+}
+
+function renderTabSluiten(){
+  const wk=getWeekKey(UI.weekOffset);
+  let html=`
+    <div class="week-nav">
+      <button class="nav-btn" onclick="UI.weekOffset--;renderAdmin()">&#8592;</button>
+      <span class="week-label">${getWeekLabel(UI.weekOffset)}</span>
+      <button class="nav-btn" onclick="UI.weekOffset++;renderAdmin()">&#8594;</button>
+    </div>
+    <div class="card"><div class="section-label">Dag of maaltijd sluiten — iedereen wordt automatisch afgemeld</div>`;
+  DAYS.forEach((day,i)=>{
+    html+=`<div class="day-row"><span class="day-name">${day}</span><div class="meal-pills">`;
+    MEALS.forEach(meal=>{
+      const closed=isClosed(wk,i,meal);
+      html+=`<span class="meal-pill ${closed?"absent":"present"}" onclick="toggleClosed('${wk}',${i},'${meal}')">${meal} ${closed?"✕":"✓"}</span>`;
+    });
+    html+=`<span class="meal-pill" style="background:var(--stone);color:var(--muted);cursor:pointer;font-size:0.75rem;" onclick="closeWholeDay('${wk}',${i})">Hele dag ✕</span>`;
+    html+="</div></div>";
+  });
+  html+=`</div><p class="hint">Gesloten dagen tellen niet mee in kosten voor medewerkers.</p>`;
+  document.getElementById("tab-sluiten").innerHTML=html;
+}
+
+function renderTabMaand(){
+  const yr=UI.selectedYear, mo=UI.selectedMonth;
+  const years=[yr-1,yr,yr+1];
+  let mOpts=MONTHS.map((m,i)=>`<option value="${i}"${i===mo?" selected":""}>${m}</option>`).join("");
+  let yOpts=years.map(y=>`<option value="${y}"${y===yr?" selected":""}>${y}</option>`).join("");
+  let html=`
+    <div class="month-controls">
+      <select onchange="UI.selectedMonth=parseInt(this.value);renderAdmin()">${mOpts}</select>
+      <select onchange="UI.selectedYear=parseInt(this.value);renderAdmin()">${yOpts}</select>
+    </div>
+    <div class="card"><div class="section-label">Overzicht ${MONTHS[mo]} ${yr}</div>`;
+  DATA.users.forEach(u=>{
+    const s=monthSummary(u.name,yr,mo);
+    html+=`<div class="person-row">
+      <span class="person-name">${u.name}</span>
+      <span class="person-sub">${s.o}× ont. &nbsp; ${s.l}× lunch</span>
+      <span class="person-cost">€${s.total}</span>
+      <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;" onclick="exportOne('${u.name}',${yr},${mo})">Excel</button>
+    </div>`;
+  });
+  html+=`</div>
+    <div class="export-btns">
+      <button class="btn btn-export" onclick="exportAll(${yr},${mo})">↓ Iedereen exporteren — 1 Excel</button>
+    </div>`;
+  document.getElementById("tab-maand").innerHTML=html;
+}
+
+function renderTabMensen(){
+  let html=`
+    <div class="card card-sm">
+      <div class="section-label">Medewerker toevoegen</div>
+      <div class="add-row">
+        <input type="text" id="newName" placeholder="Naam"/>
+        <input type="text" id="newPw" placeholder="Wachtwoord" style="max-width:130px"/>
+        <button class="btn-add" onclick="addUser()">+ Toevoegen</button>
+      </div>
+    </div>
+    <div class="card"><div class="section-label">Medewerkers (${DATA.users.length})</div>`;
+  DATA.users.forEach((u,i)=>{
+    html+=`<div class="user-edit-row">
+      <input class="name-inp" type="text" value="${u.name}" onchange="DATA.users[${i}].name=this.value;save()"/>
+      <input class="pw-inp" type="text" value="${u.password}" onchange="DATA.users[${i}].password=this.value;save()"/>
+      <button class="btn btn-danger" onclick="removeUser(${i})">✕</button>
+    </div>`;
+  });
+  html+="</div><p class='hint'>Naam en wachtwoord direct aanpassen in de velden hierboven. Klik ergens anders om op te slaan.</p>";
+  document.getElementById("tab-mensen").innerHTML=html;
+}
+
+function renderTabInstellingen(){
+  let html=`
+    <div class="card">
+      <div class="section-label">Prijzen per maaltijd</div>
+      <div class="setting-row">
+        <span class="setting-label">Prijs ontbijt</span>
+        <input type="number" step="0.10" min="0" value="${DATA.prices.Ontbijt.toFixed(2)}" onchange="DATA.prices.Ontbijt=parseFloat(this.value)||0;save()"/>
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Prijs lunch</span>
+        <input type="number" step="0.10" min="0" value="${DATA.prices.Lunch.toFixed(2)}" onchange="DATA.prices.Lunch=parseFloat(this.value)||0;save()"/>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-label">Admin toegang</div>
+      <div class="setting-row">
+        <span class="setting-label">Admin wachtwoord</span>
+        <span style="color:var(--muted);font-size:0.8rem">admin123 &nbsp;(aanpassen via code)</span>
+      </div>
+    </div>
+    <p class="hint">Prijswijzigingen zijn direct van kracht voor alle berekeningen en exports.</p>`;
+  document.getElementById("tab-instellingen").innerHTML=html;
+}
+
+function addUser(){
+  const name=document.getElementById("newName").value.trim();
+  const pw=document.getElementById("newPw").value.trim();
+  if(!name||!pw)return;
+  DATA.users.push({name,password:pw});
+  markPending();
+  populateSelect();
+  renderTabMensen();
+}
+function removeUser(i){
+  if(!confirm("Medewerker '"+DATA.users[i].name+"' verwijderen?"))return;
+  DATA.users.splice(i,1);
+  markPending();
+  populateSelect();
+  renderTabMensen();
+}
+
+// Populate select on load
+function populateSelect(){
+  const sel=document.getElementById("sel");
+  while(sel.options.length > 2) sel.remove(2);
+  DATA.users.forEach(u=>{
+    const o=document.createElement("option");
+    o.value=u.name; o.textContent=u.name;
+    sel.appendChild(o);
+  });
+}
+
+// Ask for bin ID if not set
+function promptBinId() {
+  const existing = localStorage.getItem(JSONBIN_BIN_ID_KEY);
+  if (existing) { JSONBIN_BIN_ID = existing; return; }
+  const id = prompt("Voer het JSONBin ID in (vraag dit aan de beheerder).\n\nBen je de eerste gebruiker? Laat leeg en druk OK — dan wordt automatisch een nieuw aangemaakt.");
+  if (id && id.trim()) {
+    JSONBIN_BIN_ID = id.trim();
+    localStorage.setItem(JSONBIN_BIN_ID_KEY, JSONBIN_BIN_ID);
   }
 }
 
-async function startApp() {
-  showLoading("Data ophalen...");
-  try{await loadAll();updateApiStatus();renderWeek();}
-  catch(e){alert("Kon data niet laden: "+e.message);}
-  hideLoading();
+async function refreshData() {
+  await loadFromBin();
+  render();
 }
 
-(async function init(){
-  hideLoading();
-  if(sessionStorage.getItem("hunter_auth")==="1"){
-    document.getElementById("login-screen").style.display="none";
-    document.getElementById("app-screen").style.display="block";
-    await startApp();
-  } else {
-    document.getElementById("login-screen").style.display="block";
+// ── PENDING SAVE ──────────────────────────────────────────
+let pendingSave = false;
+
+function markPending() {
+  pendingSave = true;
+  const bar = document.getElementById("save-bar");
+  if (bar) bar.classList.add("visible");
+}
+
+async function commitSave() {
+  const btn = document.getElementById("save-btn");
+  const txt = document.getElementById("save-bar-text");
+  if (btn) { btn.disabled = true; btn.textContent = "Opslaan..."; }
+  await save();
+  pendingSave = false;
+  if (btn) { btn.disabled = false; btn.textContent = "Opslaan ↑"; }
+  if (txt) txt.textContent = "Opgeslagen ✓";
+  setTimeout(() => {
+    const bar = document.getElementById("save-bar");
+    if (bar) bar.classList.remove("visible");
+    if (txt) txt.textContent = "Je hebt wijzigingen — vergeet niet op te slaan";
+  }, 2000);
+}
+
+// Warn on close if pending
+window.addEventListener("beforeunload", e => {
+  if (pendingSave) { e.preventDefault(); e.returnValue = ""; }
+});
+
+// ── DEADLINE ─────────────────────────────────────────────
+function getDeadlineInfo() {
+  const now = new Date();
+  const day = now.getDay(); // 0=sun,1=mon...4=thu
+  const thu = new Date(now);
+  thu.setDate(now.getDate() + ((4 - day + 7) % 7));
+  thu.setHours(12, 0, 0, 0);
+  if (day === 4 && now.getHours() >= 12) {
+    // Past this thursday, next thursday
+    thu.setDate(thu.getDate() + 7);
   }
+  const diff = thu - now;
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(hours / 24);
+  const urgent = hours < 24;
+  let label = "";
+  if (days > 1) label = `Nog ${days} dagen (donderdag 12:00)`;
+  else if (hours > 1) label = `Nog ${hours} uur! Deadline donderdag 12:00`;
+  else label = "Deadline bijna verstreken!";
+  return { label, urgent };
+}
+
+// ── NOT FILLED CHECK ─────────────────────────────────────
+function getNotFilledUsers() {
+  const wk = getWeekKey(1); // next week
+  return DATA.users.filter(u => {
+    // Check if user has made ANY explicit choice for next week
+    return !DATA.absences[u.name]?.[wk];
+  });
+}
+
+// ── WHATSAPP REMINDER ────────────────────────────────────
+function sendWhatsAppReminder() {
+  const notFilled = getNotFilledUsers();
+  if (notFilled.length === 0) {
+    alert("Iedereen heeft al ingevuld voor volgende week!");
+    return;
+  }
+  const names = notFilled.map(u => u.name.split(" ")[0]).join(", ");
+  const url = window.location.href;
+  const msg = `Hey ${names}! Reminder: vul je lunch en ontbijt in voor volgende week via ${url} — deadline is donderdag 12:00.`;
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg));
+}
+
+// ── GREETING ─────────────────────────────────────────────
+function setGreeting() {
+  const h = new Date().getHours();
+  let greeting;
+  if (h >= 5 && h < 12) greeting = "Goedemorgen,";
+  else if (h >= 12 && h < 18) greeting = "Goedemiddag,";
+  else greeting = "Goedenavond,";
+  const el = document.getElementById("greeting-text");
+  if (el) el.innerHTML = greeting + "<br><em>welkom terug.</em>";
+}
+setGreeting();
+
+// Init
+(async function init() {
+  promptBinId();
+  await loadFromBin();
+  populateSelect();
 })();
 </script>
 </body>
