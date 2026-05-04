@@ -202,6 +202,97 @@
     padding: 10px 18px;
   }
   .btn-export:hover { background: #b5e0ca; }
+  .btn-save {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 11px 22px;
+    font-size: 0.9rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .btn-save:hover { background: #3a6f95; transform: translateY(-1px); }
+  .btn-save:disabled { background: var(--muted); cursor: default; transform: none; }
+  .save-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+    transform: translateY(100%);
+    transition: transform 0.25s ease;
+  }
+  .save-bar.visible { transform: translateY(0); }
+  .save-bar-text { font-size: 0.85rem; color: var(--muted); }
+  .deadline-banner {
+    background: rgba(192,120,90,0.08);
+    border: 1px solid rgba(192,120,90,0.2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    color: var(--warn);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .deadline-banner.ok {
+    background: rgba(58,140,101,0.08);
+    border-color: rgba(58,140,101,0.2);
+    color: var(--green);
+  }
+  .not-filled-banner {
+    background: rgba(74,127,165,0.08);
+    border: 1px solid rgba(74,127,165,0.2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    color: var(--accent);
+  }
+  .order-block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    backdrop-filter: blur(8px);
+  }
+  .order-block-title {
+    font-weight: 500;
+    font-size: 0.88rem;
+    margin-bottom: 10px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .order-badge {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--sky);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .allergy-tag {
+    display: inline-block;
+    background: rgba(192,120,90,0.1);
+    color: var(--warn);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-top: 4px;
+  }
 
   /* App screen */
   #app-screen { display: none; }
@@ -541,8 +632,8 @@
   <!-- LOGIN -->
   <div id="login-screen">
     <div class="login-hero">
-      <h1>Goedemorgen,<br><em>welkom terug.</em></h1>
-      <p>Meld je aan voor lunch &amp; ontbijt overzicht</p>
+      <h1 id="greeting-text">Goedemorgen,<br><em>welkom terug.</em></h1>
+      <p>Meld je aan voor het lunch &amp; ontbijt overzicht</p>
     </div>
     <div class="card">
       <div class="form-group">
@@ -577,7 +668,12 @@
     </div>
 
     <!-- USER VIEW -->
-    <div id="user-view">
+    <!-- Save bar -->
+<div class="save-bar" id="save-bar">
+  <span class="save-bar-text" id="save-bar-text">Je hebt wijzigingen — vergeet niet op te slaan</span>
+  <button class="btn-save" id="save-btn" onclick="commitSave()">Opslaan ↑</button>
+</div>
+<div id="user-view">
       <div class="week-nav">
         <button class="nav-btn" onclick="UI.weekOffset--;render()">&#8592;</button>
         <span class="week-label" id="u-week-label"></span>
@@ -722,8 +818,11 @@ async function save() {
       });
       // Merge closedDays
       const mergedClosed = Object.assign({}, remote.closedDays || {}, DATA.closedDays || {});
+      // Merge allergies
+      const mergedAllergies = Object.assign({}, remote.allergies || {}, DATA.allergies || {});
       DATA.absences = mergedAbsences;
       DATA.closedDays = mergedClosed;
+      DATA.allergies = mergedAllergies;
     }
     await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
       method: "PUT",
@@ -761,27 +860,27 @@ function getWeekLabel(offset){
 function isAbsent(user,wk,day,meal){return!!(DATA.absences[user]?.[wk]?.[day]?.[meal]);}
 function isClosed(wk,i,meal){return!!(DATA.closedDays[getDayKey(wk,i)]?.[meal]);}
 
-async function toggleAbsence(user,wk,day,meal){
+function toggleAbsence(user,wk,day,meal){
   if(!DATA.absences[user])DATA.absences[user]={};
   if(!DATA.absences[user][wk])DATA.absences[user][wk]={};
   if(!DATA.absences[user][wk][day])DATA.absences[user][wk][day]={};
   DATA.absences[user][wk][day][meal]=!DATA.absences[user][wk][day][meal];
+  markPending();
   render();
-  await save();
 }
-async function toggleClosed(wk,i,meal){
+function toggleClosed(wk,i,meal){
   const dk=getDayKey(wk,i);
   if(!DATA.closedDays[dk])DATA.closedDays[dk]={};
   DATA.closedDays[dk][meal]=!DATA.closedDays[dk][meal];
+  markPending();
   render();
-  await save();
 }
-async function closeWholeDay(wk,i){
+function closeWholeDay(wk,i){
   const dk=getDayKey(wk,i);
   if(!DATA.closedDays[dk])DATA.closedDays[dk]={};
   MEALS.forEach(m=>DATA.closedDays[dk][m]=true);
+  markPending();
   render();
-  await save();
 }
 
 function countWeek(user,wk){
@@ -915,9 +1014,22 @@ function renderUser(){
   const wk=getWeekKey(UI.weekOffset);
   const user=UI.loggedIn.name;
   document.getElementById("u-week-label").textContent=getWeekLabel(UI.weekOffset);
+
+  // Deadline banner
+  const dl = getDeadlineInfo();
+  let dlBanner = document.getElementById("u-deadline-banner");
+  if (!dlBanner) {
+    dlBanner = document.createElement("div");
+    dlBanner.id = "u-deadline-banner";
+    const uv = document.getElementById("user-view");
+    uv.insertBefore(dlBanner, uv.firstChild);
+  }
+  dlBanner.className = "deadline-banner " + (dl.urgent ? "" : "ok");
+  dlBanner.textContent = "⏰ " + dl.label;
+
   // Days
   const dc=document.getElementById("u-days-card");
-  dc.innerHTML='<div class="section-label">Groen = aanwezig &nbsp;·&nbsp; Rood = afwezig &nbsp;·&nbsp; Grijs = gesloten</div>';
+  dc.innerHTML='<div class="section-label">Klik om aan/af te melden &nbsp;·&nbsp; Groen = aanwezig &nbsp;·&nbsp; Rood = afwezig</div>';
   DAYS.forEach((day,i)=>{
     const row=document.createElement("div");
     row.className="day-row";
@@ -943,13 +1055,52 @@ function renderUser(){
     row.appendChild(pills);
     dc.appendChild(row);
   });
-  // Stats
+
+  // Stats this week
   const{o,l}=countWeek(user,wk);
   const cost=(o*DATA.prices.Ontbijt+l*DATA.prices.Lunch).toFixed(2);
   document.getElementById("u-stats").innerHTML=`
     <div class="stat-box"><div class="s-label">Ontbijten</div><div class="s-val">${o}</div></div>
     <div class="stat-box"><div class="s-label">Lunches</div><div class="s-val">${l}</div></div>
     <div class="stat-box"><div class="s-label">Kosten week</div><div class="s-val">€${cost}</div></div>`;
+
+  // Monthly summary
+  const now = new Date();
+  const ms = monthSummary(user, now.getFullYear(), now.getMonth());
+  let monthEl = document.getElementById("u-month-summary");
+  if (!monthEl) {
+    monthEl = document.createElement("div");
+    monthEl.id = "u-month-summary";
+    monthEl.className = "card";
+    monthEl.style.marginTop = "14px";
+    document.getElementById("user-view").appendChild(monthEl);
+  }
+  monthEl.innerHTML = `
+    <div class="section-label">Deze maand — ${MONTHS[now.getMonth()]} ${now.getFullYear()}</div>
+    <div class="stat-row" style="margin-bottom:10px">
+      <div class="stat-box"><div class="s-label">Ontbijten</div><div class="s-val">${ms.o}</div></div>
+      <div class="stat-box"><div class="s-label">Lunches</div><div class="s-val">${ms.l}</div></div>
+      <div class="stat-box"><div class="s-label">In te houden</div><div class="s-val">€${ms.total}</div></div>
+    </div>
+    <p style="font-size:0.78rem;color:var(--muted)">Wordt aan het einde van de maand van je salaris afgeschreven.</p>`;
+
+  // Allergy field
+  let allergyEl = document.getElementById("u-allergy-section");
+  if (!allergyEl) {
+    allergyEl = document.createElement("div");
+    allergyEl.id = "u-allergy-section";
+    allergyEl.className = "card";
+    allergyEl.style.marginTop = "14px";
+    document.getElementById("user-view").appendChild(allergyEl);
+  }
+  const currentAllergy = DATA.allergies?.[user] || "";
+  allergyEl.innerHTML = `
+    <div class="section-label">Dieetwensen / allergieën</div>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:10px">Alleen zichtbaar voor jou en de beheerder.</p>
+    <input type="text" id="allergy-input" placeholder="bijv. lactose-intolerant, vegetarisch, notenallergie..."
+      value="${currentAllergy}"
+      style="width:100%;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);font-family:var(--font);font-size:0.88rem;background:rgba(255,255,255,0.8);"
+      oninput="DATA.allergies=DATA.allergies||{};DATA.allergies['${user}']=this.value;markPending()"/>`;
 }
 
 function switchTab(btn,tab){
@@ -974,28 +1125,80 @@ function renderAdminTab(tab){
   if(tab==="instellingen") renderTabInstellingen();
 }
 
+function countOrderBlock(users, wk, dayIndices) {
+  let to=0, tl=0;
+  users.forEach(u => {
+    dayIndices.forEach(i => {
+      if(!isClosed(wk,i,"Ontbijt")&&!isAbsent(u.name,wk,DAYS[i],"Ontbijt")) to++;
+      if(!isClosed(wk,i,"Lunch")&&!isAbsent(u.name,wk,DAYS[i],"Lunch")) tl++;
+    });
+  });
+  return {to, tl};
+}
+
 function renderTabWeek(){
   const wk=getWeekKey(UI.weekOffset);
+  const isCurrentOrNext = UI.weekOffset === 0 || UI.weekOffset === 1;
   let to=0,tl=0;
   DATA.users.forEach(u=>{const c=countWeek(u.name,wk);to+=c.o;tl+=c.l;});
   const tc=(to*DATA.prices.Ontbijt+tl*DATA.prices.Lunch).toFixed(2);
+
+  // Deadline banner (only for upcoming weeks)
+  let deadlineBanner = "";
+  if (isCurrentOrNext) {
+    const dl = getDeadlineInfo();
+    deadlineBanner = `<div class="deadline-banner ${dl.urgent?"":"ok"}">⏰ ${dl.label} — beide bestellingen</div>`;
+  }
+
+  // Not filled banner (only next week)
+  let notFilledBanner = "";
+  if (UI.weekOffset === 1) {
+    const notFilled = getNotFilledUsers();
+    if (notFilled.length > 0) {
+      const names = notFilled.map(u=>u.name.split(" ")[0]).join(", ");
+      notFilledBanner = `<div class="not-filled-banner">
+        <strong>Nog niet ingevuld:</strong> ${names}
+        <br><button class="btn-export" style="margin-top:8px;padding:7px 14px;font-size:0.8rem;" onclick="sendWhatsAppReminder()">📱 Stuur WhatsApp reminder</button>
+      </div>`;
+    } else {
+      notFilledBanner = `<div class="deadline-banner ok">✓ Iedereen heeft ingevuld voor volgende week</div>`;
+    }
+  }
+
+  // Two order blocks
+  const b1 = countOrderBlock(DATA.users, wk, [0,1,2]); // ma/di/wo
+  const b2 = countOrderBlock(DATA.users, wk, [3,4]);    // do/vr
+  const c1 = (b1.to*DATA.prices.Ontbijt + b1.tl*DATA.prices.Lunch).toFixed(2);
+  const c2 = (b2.to*DATA.prices.Ontbijt + b2.tl*DATA.prices.Lunch).toFixed(2);
+
   let html=`
     <div class="week-nav">
       <button class="nav-btn" onclick="UI.weekOffset--;renderAdmin()">&#8592;</button>
       <span class="week-label">${getWeekLabel(UI.weekOffset)}</span>
       <button class="nav-btn" onclick="UI.weekOffset++;renderAdmin()">&#8594;</button>
     </div>
+    ${deadlineBanner}
+    ${notFilledBanner}
+    <div class="order-block">
+      <div class="order-block-title">Bestelling 1 — Ma / Di / Wo <span class="order-badge">€${c1}</span></div>
+      <div style="font-size:0.82rem;color:var(--muted)">${b1.to} ontbijten &nbsp;·&nbsp; ${b1.tl} lunches</div>
+    </div>
+    <div class="order-block">
+      <div class="order-block-title">Bestelling 2 — Do / Vr <span class="order-badge">€${c2}</span></div>
+      <div style="font-size:0.82rem;color:var(--muted)">${b2.to} ontbijten &nbsp;·&nbsp; ${b2.tl} lunches</div>
+    </div>
     <div class="stat-row">
       <div class="stat-box"><div class="s-label">Ontbijten</div><div class="s-val">${to}</div></div>
       <div class="stat-box"><div class="s-label">Lunches</div><div class="s-val">${tl}</div></div>
-      <div class="stat-box"><div class="s-label">Omzet</div><div class="s-val">€${tc}</div></div>
+      <div class="stat-box"><div class="s-label">Totaal</div><div class="s-val">€${tc}</div></div>
     </div>
     <div class="card"><div class="section-label">Per medewerker</div>`;
   DATA.users.forEach(u=>{
     const{o,l}=countWeek(u.name,wk);
     const c=(o*DATA.prices.Ontbijt+l*DATA.prices.Lunch).toFixed(2);
-    html+=`<div class="person-row">
-      <span class="person-name">${u.name}</span>
+    const allergy = DATA.allergies?.[u.name] ? `<span class="allergy-tag">⚠ ${DATA.allergies[u.name]}</span>` : "";
+    html+=`<div class="person-row" style="flex-wrap:wrap;">
+      <span class="person-name">${u.name}${allergy ? "<br>"+allergy : ""}</span>
       <span class="person-sub">${o}× ontbijt &nbsp; ${l}× lunch</span>
       <span class="person-cost">€${c}</span>
     </div>`;
@@ -1099,23 +1302,19 @@ function renderTabInstellingen(){
   document.getElementById("tab-instellingen").innerHTML=html;
 }
 
-async function addUser(){
+function addUser(){
   const name=document.getElementById("newName").value.trim();
   const pw=document.getElementById("newPw").value.trim();
   if(!name||!pw)return;
   DATA.users.push({name,password:pw});
-  showLoading("Opslaan...");
-  await save();
-  hideLoading();
+  markPending();
   populateSelect();
   renderTabMensen();
 }
-async function removeUser(i){
+function removeUser(i){
   if(!confirm("Medewerker '"+DATA.users[i].name+"' verwijderen?"))return;
   DATA.users.splice(i,1);
-  showLoading("Opslaan...");
-  await save();
-  hideLoading();
+  markPending();
   populateSelect();
   renderTabMensen();
 }
@@ -1146,6 +1345,91 @@ async function refreshData() {
   await loadFromBin();
   render();
 }
+
+// ── PENDING SAVE ──────────────────────────────────────────
+let pendingSave = false;
+
+function markPending() {
+  pendingSave = true;
+  const bar = document.getElementById("save-bar");
+  if (bar) bar.classList.add("visible");
+}
+
+async function commitSave() {
+  const btn = document.getElementById("save-btn");
+  const txt = document.getElementById("save-bar-text");
+  if (btn) { btn.disabled = true; btn.textContent = "Opslaan..."; }
+  await save();
+  pendingSave = false;
+  if (btn) { btn.disabled = false; btn.textContent = "Opslaan ↑"; }
+  if (txt) txt.textContent = "Opgeslagen ✓";
+  setTimeout(() => {
+    const bar = document.getElementById("save-bar");
+    if (bar) bar.classList.remove("visible");
+    if (txt) txt.textContent = "Je hebt wijzigingen — vergeet niet op te slaan";
+  }, 2000);
+}
+
+// Warn on close if pending
+window.addEventListener("beforeunload", e => {
+  if (pendingSave) { e.preventDefault(); e.returnValue = ""; }
+});
+
+// ── DEADLINE ─────────────────────────────────────────────
+function getDeadlineInfo() {
+  const now = new Date();
+  const day = now.getDay(); // 0=sun,1=mon...4=thu
+  const thu = new Date(now);
+  thu.setDate(now.getDate() + ((4 - day + 7) % 7));
+  thu.setHours(12, 0, 0, 0);
+  if (day === 4 && now.getHours() >= 12) {
+    // Past this thursday, next thursday
+    thu.setDate(thu.getDate() + 7);
+  }
+  const diff = thu - now;
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(hours / 24);
+  const urgent = hours < 24;
+  let label = "";
+  if (days > 1) label = `Nog ${days} dagen (donderdag 12:00)`;
+  else if (hours > 1) label = `Nog ${hours} uur! Deadline donderdag 12:00`;
+  else label = "Deadline bijna verstreken!";
+  return { label, urgent };
+}
+
+// ── NOT FILLED CHECK ─────────────────────────────────────
+function getNotFilledUsers() {
+  const wk = getWeekKey(1); // next week
+  return DATA.users.filter(u => {
+    // Check if user has made ANY explicit choice for next week
+    return !DATA.absences[u.name]?.[wk];
+  });
+}
+
+// ── WHATSAPP REMINDER ────────────────────────────────────
+function sendWhatsAppReminder() {
+  const notFilled = getNotFilledUsers();
+  if (notFilled.length === 0) {
+    alert("Iedereen heeft al ingevuld voor volgende week!");
+    return;
+  }
+  const names = notFilled.map(u => u.name.split(" ")[0]).join(", ");
+  const url = window.location.href;
+  const msg = `Hey ${names}! Reminder: vul je lunch en ontbijt in voor volgende week via ${url} — deadline is donderdag 12:00.`;
+  window.open("https://wa.me/?text=" + encodeURIComponent(msg));
+}
+
+// ── GREETING ─────────────────────────────────────────────
+function setGreeting() {
+  const h = new Date().getHours();
+  let greeting;
+  if (h >= 5 && h < 12) greeting = "Goedemorgen,";
+  else if (h >= 12 && h < 18) greeting = "Goedemiddag,";
+  else greeting = "Goedenavond,";
+  const el = document.getElementById("greeting-text");
+  if (el) el.innerHTML = greeting + "<br><em>welkom terug.</em>";
+}
+setGreeting();
 
 // Init
 (async function init() {
