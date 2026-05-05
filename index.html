@@ -904,7 +904,9 @@ function getWeekLabel(offset){
 function isAbsent(user,wk,day,meal){return!!(DATA.absences[user]?.[wk]?.[day]?.[meal]);}
 function isClosed(wk,i,meal){return!!(DATA.closedDays[getDayKey(wk,i)]?.[meal]);}
 
-async function toggleAbsence(user,wk,day,meal){
+async function toggleAbsence(user, wk, day, meal, forceAdmin=false){
+  // Block if week is locked and not admin
+  if (!forceAdmin && !UI.loggedIn?.isAdmin && isWeekLocked(UI.weekOffset)) return;
   if(!DATA.absences[user])DATA.absences[user]={};
   if(!DATA.absences[user][wk])DATA.absences[user][wk]={};
   if(!DATA.absences[user][wk][day])DATA.absences[user][wk][day]={};
@@ -1074,8 +1076,11 @@ function renderUser(){
   dlBanner.textContent = "⏰ " + dl.label;
 
   // Days
+  const locked = isWeekLocked(UI.weekOffset);
   const dc=document.getElementById("u-days-card");
-  dc.innerHTML='<div class="section-label">Klik om aan/af te melden &nbsp;·&nbsp; Groen = aanwezig &nbsp;·&nbsp; Rood = afwezig</div>';
+  dc.innerHTML = locked
+    ? '<div class="section-label" style="color:var(--warn)">🔒 Deadline verstreken — week is vergrendeld. Neem contact op met de beheerder voor wijzigingen.</div>'
+    : '<div class="section-label">Klik om aan/af te melden &nbsp;·&nbsp; Groen = aanwezig &nbsp;·&nbsp; Rood = afwezig</div>';
   DAYS.forEach((day,i)=>{
     const row=document.createElement("div");
     row.className="day-row";
@@ -1094,7 +1099,9 @@ function renderUser(){
         const absent=isAbsent(user,wk,day,meal);
         pill.classList.add(absent?"absent":"present");
         pill.textContent=meal+(absent?" ✕":" ✓");
-        pill.onclick=()=>toggleAbsence(user,wk,day,meal);
+        if (!locked) pill.onclick=()=>toggleAbsence(user,wk,day,meal);
+        else pill.style.cursor="default";
+        if (locked) pill.style.opacity="0.6";
       }
       pills.appendChild(pill);
     });
@@ -1243,9 +1250,19 @@ function renderTabWeek(){
     const{o,l}=countWeek(u.name,wk);
     const c=(o*DATA.prices.Ontbijt+l*DATA.prices.Lunch).toFixed(2);
     const allergy = DATA.allergies?.[u.name] ? `<span class="allergy-tag">⚠ ${DATA.allergies[u.name]}</span>` : "";
-    html+=`<div class="person-row" style="flex-wrap:wrap;">
-      <span class="person-name">${u.name}${allergy ? "<br>"+allergy : ""}</span>
-      <span class="person-sub">${o}× ontbijt &nbsp; ${l}× lunch</span>
+    // Admin can toggle per person per day
+    let dayPills = "";
+    DAYS.forEach((day,i) => {
+      MEALS.forEach(meal => {
+        if(!isClosed(wk,i,meal)){
+          const absent = isAbsent(u.name,wk,day,meal);
+          dayPills += `<span class="meal-pill ${absent?"absent":"present"}" style="font-size:0.7rem;padding:2px 8px;cursor:pointer;" onclick="toggleAbsence('${u.name}','${wk}','${day}','${meal}',true)" title="${day} ${meal}">${day.slice(0,2)} ${meal.slice(0,3)} ${absent?"✕":"✓"}</span>`;
+        }
+      });
+    });
+    html+=`<div class="person-row" style="flex-wrap:wrap;align-items:flex-start;">
+      <span class="person-name" style="min-width:180px">${u.name}${allergy ? "<br>"+allergy : ""}</span>
+      <div style="flex:1;display:flex;flex-wrap:wrap;gap:4px;margin:4px 0">${dayPills}</div>
       <span class="person-cost">€${c}</span>
     </div>`;
   });
@@ -1434,6 +1451,20 @@ function getDeadlineInfo() {
   else if (hours > 1) label = `Nog ${hours} uur! Deadline donderdag 12:00`;
   else label = "Deadline bijna verstreken!";
   return { label, urgent };
+}
+
+// ── WEEK LOCKED CHECK ────────────────────────────────────
+function isWeekLocked(weekOffset) {
+  // Past and current weeks are always locked
+  if (weekOffset <= 0) return true;
+  // Next week is locked after thursday 12:00
+  if (weekOffset === 1) {
+    const now = new Date();
+    const day = now.getDay(); // 0=sun, 4=thu
+    if (day === 4 && now.getHours() >= 12) return true;
+    if (day === 5 || day === 6 || day === 0) return true; // fri/sat/sun = past deadline
+  }
+  return false;
 }
 
 // ── NOT FILLED CHECK ─────────────────────────────────────
